@@ -26,9 +26,9 @@ backend webservers
     balance roundrobin
     server-template myservers 3 subdomain.awcator:443 check resolvers myresolvers init-addr none
     # THis will templatize 3 servers as folllows
-    # server myservers0 subdomain.awcator:443 check resolvers myresolvers init-addr none
-    # server myservers1 subdomain.awcator:443 check resolvers myresolvers init-addr none
-    # server myservers2 subdomain.awcator:443 check resolvers myresolvers init-addr none
+    # server myservers0 192.168.1.2:443 check resolvers myresolvers init-addr none
+    # server myservers1 192.168.1.1:443 check resolvers myresolvers init-addr none
+    # server myservers2 192.168.1.3:443 check resolvers myresolvers init-addr none
 ```
 
 vertify the resolved backend
