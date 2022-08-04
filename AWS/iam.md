@@ -22,6 +22,5 @@ aws iam get-role --role-name nodes.awcator.hsop.io
 aws iam list-attached-role-policies --role-name nodes.awcator.hsop.io
 #to get policy details
 aws iam get-policy --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-![image](https://user-images.githubusercontent.com/54628909/182915277-7e96e52b-995d-4c91-b935-fb714512a857.png)
-
 ```
+![image](https://user-images.githubusercontent.com/54628909/182915277-7e96e52b-995d-4c91-b935-fb714512a857.png)
