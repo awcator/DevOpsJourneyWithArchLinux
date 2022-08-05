@@ -19,4 +19,6 @@ ssh -i ~/.ssh/id_rsa ubuntu@bastion.awcator.hsop.io -L localhost:1234:172.20.59.
 ssh -i ~/.ssh/id_rsa ubuntu@Machine1 -L localhost:1234:Machine2:PORT
 
 curl localhost:1234   #imples === curl machine2:3389
+
+localMachibe ========Machine1 =========Machine 2
 ```
