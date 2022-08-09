@@ -13,7 +13,7 @@ ngrok http 8000
 eg.
 curl http://6777-49-37-189-74.ngrok.io/myfile.txt
 ```
-**Port-tunneling from from machine2 that can be accesed by machine 1. So end user can touch machine2 from localmachine**
+**Use SSH as tcp proxyserver to connect Machine2 from localhost via machine1(deemed to be Proxyserver)**
 ```
 ssh -i ~/.ssh/id_rsa ubuntu@bastion.awcator.hsop.io -L localhost:1234:172.20.59.133:3389
 ssh -i ~/.ssh/id_rsa ubuntu@Machine1 -L localhost:1234:Machine2:PORT
