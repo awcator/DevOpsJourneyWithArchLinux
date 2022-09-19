@@ -9,6 +9,13 @@ prometheus --version
 # go version:       go1.19
 # platform:         linux/amd64
 
+#config at  /etc/prometheus/prometheus.yml
+systemctl start prometheus.service
+systemctl enable prometheus.service
+systemctl status prometheus.service
+
+#more about the version can we found at http://awcator:9090/status
+#metrics at http://awcator:9090/metrics
 
 - Alternatively, you can download it from 
 PROMETHEUS_VERSION="2.2.1"
