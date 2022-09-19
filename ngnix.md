@@ -48,7 +48,7 @@ server {
 
 ```
 ## Client Certificate Autherization 
-```
+```diff
 Create CA certs (Self Signed)
 #awcator is ca doamin
 openssl genrsa -out ca.key 4096
@@ -88,5 +88,6 @@ Configure ngnix config as follows:
         }    
     }  
 curl https://awcator:8000/ -k --key client.key --cert client.crt 
-! curl https://awcator:8000/ --key client.pem --cert client.crt  --cacert ca.crt
+! We can make curl to trust the certficate by sepcifing ca.crt path
+curl https://awcator:8000/ --key client.pem --cert client.crt  --cacert ca.crt
 ```
