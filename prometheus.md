@@ -82,3 +82,57 @@ systemctl restart prometheus
 #use node_memory_MemFree_bytes to view free space memoery
 ```
 ### Alerts config
+```diff
+#install alert manger extra/alertmanager0.24.0
+pacman -S extra/alertmanager
+systemctl start alertmanager.service
+systemctl enable alertmanager.service
+systemctl status alertmanager.service
+
+#runs at port :9093
+Add the following lines and substitute with correct values to /etc/alertmanager/alertmanager.yml:
+
+global:
+  smtp_smarthost: 'localhost:25'
+  smtp_from: 'alertmanager@prometheus.com'
+  smtp_auth_username: ''
+  smtp_auth_password: ''
+  smtp_require_tls: false
+templates:
+- '/etc/alertmanager/template/*.tmpl'
+route:
+  repeat_interval: 1h
+  receiver: operations-team
+receivers:
+- name: 'operations-team'
+  email_configs:
+  - to: 'operations-team+alerts@example.org'
+  slack_configs:
+  - api_url: https://hooks.slack.com/services/XXXXXX/XXXXXX/XXXXXX
+    channel: '#prometheus-course'
+    send_resolved: true
+  
+  
+#end of config
+This formula/Prometheus expression: CPU usage  gives 100-irate(node_cpu_seconds_total{job="awcator_node_exporter",mode="idle"}[5m])*100
+we will check if this croess abov 90% to report alert
+
+! create a rule file called awcator_rules.yml with contetnt
+
+groups:    
+- name: example    
+  rules:    
+  - alert: cpuUsage              
+    expr: 100-irate(node_cpu_seconds_total{job="awcator_node_exporter",mode="idle"}[5m])*100 > 90    
+    for: 1m     
+    labels:    
+      severity: critical    
+    annotations:    
+      summary: Muklari usage CPU  
+      
+sudo chown prometheus:prometheus awcator_rules.yml 
+systemctl restart prometheus
+visit to confirm alerts are added : http://awcator:9090/alerts?search=
+
+Refer configs/etc/prometheus/ for configs
+```
