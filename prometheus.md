@@ -81,3 +81,4 @@ systemctl status prometheus-node-exporter.service
 systemctl restart prometheus
 #use node_memory_MemFree_bytes to view free space memoery
 ```
+### Alerts config
