@@ -145,7 +145,12 @@ sudo chown prometheus:prometheus awcator_rules.yml
 systemctl restart prometheus
 visit to confirm alerts are added : http://awcator:9090/alerts?search=
 
+To stress the CPU run 
+yes > /dev/null & 
 
-
+#^run the Number of CPU times
+#Example, if you have 4 CPU then do 4 times untill it trigger alert
+#TO revert back,
+killall yes
 Refer configs/etc/prometheus/ for configs
 ```
