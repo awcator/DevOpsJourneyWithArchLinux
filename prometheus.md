@@ -160,3 +160,24 @@ killall yes
 Refer configs/etc/prometheus/ for configs
 ```
 ## Mutal SSLconnectivity between NON SSL premethus and non ssl NodeExportyer
+follow [Client Cert Auth](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/ngnix.md#client-certificate-autherization)
+Once generated all keypairs and certificates for CA/Server/& CLient, follow this
+```
+cp ca.crt /etc/ssl/certs/prometheus-ca.crt
+cp ca.key /etc/ssl/private/prometheus-ca.key
+cp client.key /etc/prometheus/prometheus.key
+chown prometheus:prometheus /etc/prometheus/prometheus.key
+cp client.crt /etc/ssl/certs/prometheus.crt
+
+Add the following lines to /etc/prometheus/prometheus.yml:
+ - job_name: 'ssl_awcator_node_exporter'
+    scrape_interval: 5s
+    scheme: https
+    tls_config:
+      ca_file: /etc/ssl/certs/prometheus-ca.crt
+      cert_file: /etc/ssl/certs/prometheus.crt
+      key_file: /etc/prometheus/prometheus.key
+    static_configs:
+      - targets: ['awcator:8000']
+
+```
