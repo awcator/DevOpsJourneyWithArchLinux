@@ -179,5 +179,41 @@ Add the following lines to /etc/prometheus/prometheus.yml:
       key_file: /etc/prometheus/prometheus.key
     static_configs:
       - targets: ['awcator:8000']
+      
+! FOR SANs insted of CN
+generate server certifcates as follows
+Create OpenSSL conf file as follows and name it a.conf
+
+# From http://apetec.com/support/GenerateSAN-CSR.htm
+# Also,  https://stackoverflow.com/a/65711669
+
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+[req_distinguished_name]
+countryName = Country Name (2 letter code)
+countryName_default = IN
+stateOrProvinceName = Karnataka
+stateOrProvinceName_default = MN
+localityName = Bangalore
+localityName_default = Bangalore
+organizationalUnitName	= Organizational Unit Name (eg, section)
+organizationalUnitName_default	= Domain Control Validated
+commonName = Internet Widgits Ltd
+commonName_max	= 64
+[ v3_req ]
+# Extensions to add to a certificate request
+basicConstraints = CA:FALSE
+extendedKeyUsage = clientAuth,serverAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1        = awcator
+DNS.2        = bwcator
+DNS.3        = cwcator
+DNS.4        = ftp.awcator.com
+
+
+
+openssl x509 -req -days 365 -sha256 -in target.csr -CA ca.crt -CAkey ca.key -set_serial 1 -out target.crt -extensions v3_req -extfile a.conf
 
 ```
