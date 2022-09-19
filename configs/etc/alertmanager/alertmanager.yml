@@ -1,0 +1,17 @@
+global:
+  smtp_smarthost: smtp.gmail.com:465
+  smtp_from: 'from@gmail.com'
+  smtp_auth_username: 'from@gmail.com'
+  smtp_auth_password: 'P@$$w0rd'
+  smtp_require_tls: false
+templates:
+  - '/etc/alertmanager/template/*.tmpl'
+
+route:
+  repeat_interval: 1h
+  receiver: operations-team
+
+receivers:
+  - name: 'operations-team'
+    email_configs:
+    - to: 'to@gmail.com'
