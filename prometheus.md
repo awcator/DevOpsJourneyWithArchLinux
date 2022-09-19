@@ -129,10 +129,23 @@ groups:
       severity: critical    
     annotations:    
       summary: Muklari usage CPU  
-      
+
+Add following lines to connect your promethus to external alertmanger in /etc/prmoetheus/promethus.yaml
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - awcator:9093
+          # - alertmanager:9093
+
+
 sudo chown prometheus:prometheus awcator_rules.yml 
 systemctl restart prometheus
 visit to confirm alerts are added : http://awcator:9090/alerts?search=
+
+
 
 Refer configs/etc/prometheus/ for configs
 ```
