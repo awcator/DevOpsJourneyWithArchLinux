@@ -63,3 +63,21 @@ systemctl daemon-reload
 systemctl enable prometheus
 systemctl start prometheus
 ```
+
+### Nodeexporter Congfig 
+```diff
+pacman -S extra/prometheus-node-exporter #prometheus-node-exporter-1.3.1-2
+systemctl start prometheus-node-exporter.service  #Runs at 9100 port
+systemctl status prometheus-node-exporter.service
+#metrics at http://awcator:9100/metrics
+
+! Add new configs under scrape_configs in /etc/prometheus/prometheus.yml
+  - job_name: 'awcator_node_exporter'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['awcator:9100']
+
+#targets can be found at http://awcator:9090/targets?search=
+systemctl restart prometheus
+#use node_memory_MemFree_bytes to view free space memoery
+```
