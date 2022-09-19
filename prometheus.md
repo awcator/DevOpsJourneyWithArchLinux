@@ -215,5 +215,7 @@ DNS.4        = ftp.awcator.com
 
 
 openssl x509 -req -days 365 -sha256 -in target.csr -CA ca.crt -CAkey ca.key -set_serial 1 -out target.crt -extensions v3_req -extfile a.conf
+restart ngnix with new target.crt/server.crt
 
+restart prometheus
 ```
