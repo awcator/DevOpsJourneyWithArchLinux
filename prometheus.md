@@ -3,7 +3,7 @@
 * Installation
 * NodeExporter Config
 * ALertManger Config
-
+* Mutal SSLconnectivity 
 ### Installation
 ```diff
 pacman -S prometheus
@@ -159,3 +159,4 @@ yes > /dev/null &
 killall yes
 Refer configs/etc/prometheus/ for configs
 ```
+## Mutal SSLconnectivity between NON SSL premethus and non ssl NodeExportyer
