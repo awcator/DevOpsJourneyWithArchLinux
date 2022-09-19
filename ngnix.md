@@ -1,7 +1,7 @@
 # Ngnix Reverse Proxy
 ## !Contents
-Protect Backend server with HTTPAuth
-SSL Termination/Protect unprotected server with SSL 
+* Protect Backend server with HTTPAuth
+* SSL Termination/Protect unprotected server with SSL 
 ## Protect Backend server with HTTPAuth
 ```diff
 add Auth config as follows in /etc/ngnix/ngnix.conf
