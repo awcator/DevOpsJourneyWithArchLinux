@@ -22,3 +22,12 @@ curl localhost:1234   #imples === curl machine2:3389
 
 localMachibe ========Machine1 =========Machine 2
 ```
+
+**Establish SSL connnectivity between two non SSL servers **
+```
+[Check this](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/prometheus.md#mutal-sslconnectivity-between-non-ssl-premethus-and-non-ssl-nodeexportyer)
+```
+**Client Cert Auth**
+```
+[Check this](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/ngnix.md#client-certificate-autherization)
+```
