@@ -128,7 +128,8 @@ groups:
 - name: example    
   rules:    
   - alert: cpuUsage              
-    expr: 100-irate(node_cpu_seconds_total{job="awcator_node_exporter",mode="idle"}[5m])*100 > 90    
+    # expr: 100-irate(node_cpu_seconds_total{job="awcator_node_exporter",mode="idle"}[5m])*100 > 90    
+    expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{job="awcator_node_exporter",mode="idle"}[5m])) * 100) >80
     for: 1m     
     labels:    
       severity: critical    
