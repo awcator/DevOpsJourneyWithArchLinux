@@ -1,5 +1,5 @@
 ## Creating simple secretes
-```
+```diff
 apiVersion: v1
 kind: Secret
 metadata:
@@ -10,8 +10,12 @@ data:
   
 !OR
 kubectl create secret generic prod-db-secret --from-literal=username=produser --from-literal=password=Y4nys7f11
-```
-#Attaching secrete to a pod
+
+!OR 
+Create secrets from file -Certificates
+kubectl create secret generic objectstore-cert --from-file=/tmp/mydomain.crt
+
+## Attaching secrete to a pod
 ```diff
 apiVersion: v1
 kind: Pod
