@@ -9,7 +9,7 @@ metadata:
 kubectl get sa
 ```
 ## Create a role
-```
+```diff
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -55,4 +55,23 @@ rules:
       - serviceaccounts
       - services
       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+      
+      !to verify
+      kubectl get roles
+      kubectl get clusterroles 
 ```
+## Create a Rolebinding [ Attaching Role to ServiceAccount]
+```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: awcator-secrets-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: secret-reader
+subjects:
+- kind: ServiceAccount
+  name: awcator-secretes-reader
+```
+## Create a pod and attach (busybox)
