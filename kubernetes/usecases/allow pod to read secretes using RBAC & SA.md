@@ -75,3 +75,25 @@ subjects:
   name: awcator-secretes-reader
 ```
 ## Create a pod and attach (busybox)
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: busybox5
+  name: busybox5
+spec:
+  containers:
+  - args:
+    - /bin/sh
+    - -c
+    - sleep 5000;echo boo
+    image: busybox
+    name: busybox3
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+  serviceAccountName: awcator-secretes-reader
+status: {}
+```
