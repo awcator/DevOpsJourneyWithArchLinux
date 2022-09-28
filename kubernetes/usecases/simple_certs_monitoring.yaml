@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: certificate-monitor-sa
+--- 
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: certificate-monitor-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: certificate-monitor-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: certificate-monitor-role
+subjects:
+- kind: ServiceAccount
+  name: certificate-monitor-sa
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cert-monitor-cron
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cert-monitor-cron
+            image: ubuntu:latest
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              apt update
+              apt install curl -y
+              apt install vim -y
+              cat >/tmp/a.sh<<'MYSCRIPT'
+              #!/bin/bash
+              curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+              chmod +x  kubectl
+              mv kubectl /bin/
+              #pull the metrics from exporter
+              curl --retry-max-time 320 --retry 12 --retry-all-errors x509-certificate-exporter-headless.monitoring.svc.cluster.local:9793/metrics   > /tmp/metrics
+              #process the metrics contetnts by removing comments
+              cat /tmp/metrics |grep -v ^# > /tmp/uncommentedmetrics
+              #export subccontetnes to appropriate file name
+              cat /tmp/uncommentedmetrics | \grep ^x509_cert_not_after > /tmp/not_after
+              cat /tmp/uncommentedmetrics | \grep ^x509_cert_expired > /tmp/expired
+              cat /tmp/expired| awk '$NF ~ /1/ {print} '|  while read -r line; do echo $line >> /tmp/expired_certs; done
+              if [ -f /tmp/expired_certs ]
+              then
+                  payloadSize=434 #json data_strig length
+                  curl -i -s -k -X $'POST' \
+                  -H $'Host: events.pagerduty.com' -H $'Content-Length: '$payloadSize -H $'Sec-Ch-Ua: \"Google Chrome\";v=\"105\", \"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"105\"' -H $'Dnt: 1' -H $'Sec-Ch-Ua-Mobile: ?0' -H $'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36' -H $'Sec-Ch-Ua-Platform: \"Windows\"' -H $'Content-Type: application/json' -H $'Accept: */*' -H $'Origin: https://developer.pagerduty.com' -H $'Sec-Fetch-Site: same-site' -H $'Sec-Fetch-Mode: cors' -H $'Sec-Fetch-Dest: empty' -H $'Referer: https://developer.pagerduty.com/' -H $'Accept-Encoding: gzip, deflate' -H $'Accept-Language: en-US,en;q=0.9,kn;q=0.8,hi;q=0.7' -H $'Connection: close' \
+                  --data-binary $'{\"payload\":{\"summary\":\"[CRITICAL] Few of your k8s certficates are expired (DEV Cluster-Tencent)\",\"severity\":\"critical\",\"source\":\"@source \",\"component\":\"@component\",\"group\":\"\",\"class\":\"\",\"custom_details\":{},\"timestamp\":\"2022-09-25T06:00:46.831Z\"},\"routing_key\":\"32BIT_PAGERDUTY_KEY\",\"event_action\":\"trigger\",\"dedup_key\":\"\",\"links\":[{\"href\":\"https://google.com\",\"text\":\"Refer configmaps in monitoring namespace for more\"}]}' \
+                  $'https://events.pagerduty.com/v2/enqueue'
+                  kubectl delete configmap expired-certs -n monitoring || true
+                  kubectl create configmap expired-certs -n monitoring --from-file=/tmp/expired_certs
+              fi
+              epoch_time_now=`date +%s`
+              while read line;
+              do
+                  expiry_scinitifc=`echo $line|awk {'print $NF '}`
+                  convert_to_float=`echo $expiry_scinitifc|awk '{printf("%f",$0);}'`
+                  expiry_epoch=`echo ${convert_to_float%.*}`
+                  DIFF=`expr $expiry_epoch - $epoch_time_now` 
+                  REM=`expr  $DIFF / 86400 `
+                  if [ $REM -lt 30 ]
+                  then
+                  echo $line >> /tmp/about_to_expire_certs
+                  fi
+              done < /tmp/not_after
+              if [ -f /tmp/about_to_expire_certs ]
+              then
+                  payloadSize=442 #json data_strig length
+                  curl -i -s -k -X $'POST' \
+                  -H $'Host: events.pagerduty.com' -H $'Content-Length: '$payloadSize -H $'Sec-Ch-Ua: \"Google Chrome\";v=\"105\", \"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"105\"' -H $'Dnt: 1' -H $'Sec-Ch-Ua-Mobile: ?0' -H $'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36' -H $'Sec-Ch-Ua-Platform: \"Windows\"' -H $'Content-Type: application/json' -H $'Accept: */*' -H $'Origin: https://developer.pagerduty.com' -H $'Sec-Fetch-Site: same-site' -H $'Sec-Fetch-Mode: cors' -H $'Sec-Fetch-Dest: empty' -H $'Referer: https://developer.pagerduty.com/' -H $'Accept-Encoding: gzip, deflate' -H $'Accept-Language: en-US,en;q=0.9,kn;q=0.8,hi;q=0.7' -H $'Connection: close' \
+                  --data-binary $'{\"payload\":{\"summary\":\"Few of your k8s certificate are about to expire in <=100 days (DEV Cluster-Tencent)\",\"severity\":\"warning\",\"source\":\"Source \",\"component\":\"component\",\"group\":\"\",\"class\":\"\",\"custom_details\":{},\"timestamp\":\"2022-09-25T06:00:46.831Z\"},\"routing_key\":\"32BIT_PAGERDUTY_KEY\",\"event_action\":\"trigger\",\"dedup_key\":\"\",\"links\":[{\"href\":\"https://google.com\",\"text\":\"Refer configmaps in monitoring namespace for more\"}]}' \
+                  $'https://events.pagerduty.com/v2/enqueue'
+                  kubectl delete configmap about-to-expire-certs -n monitoring || true
+                  kubectl create configmap about-to-expire-certs -n monitoring --from-file=/tmp/about_to_expire_certs
+              fi 
+              MYSCRIPT
+              chmod +x /tmp/a.sh
+              bash /tmp/a.sh
+          serviceAccountName: certificate-monitor-sa
+          restartPolicy: OnFailure
+
+# kubectl create ns monitoring
+# kubectl port-forward svc/x509-certificate-exporter-headless   9793:9793 -n monitoring
+# --set secretsExporter.resources.limits.cpu='200m' --set secretsExporter.resources.requests.memory='500mi' --set secretsExporter.resources.requests.cpu='100m'
+# helm repo add enix https://charts.enix.io
+# helm install x509-certificate-exporter enix/x509-certificate-exporter --set secretsExporter.secretTypes[0].type='kubernetes.io/tls' --set secretsExporter.secretTypes[0].key='tls.crt' --set secretsExporter.secretTypes[1].type='Opaque' --set secretsExporter.secretTypes[1].key='certificate' --set secretsExporter.secretTypes[2].type='Opaque' --set secretsExporter.secretTypes[2].key='ca'  --set prometheusRules.create=false --set secretsExporter.resources.limits.cpu='200m' --set secretsExporter.resources.limits.memory='1200Mi' --set secretsExporter.resources.requests.cpu='100m'  --set secretsExporter.resources.requests.memory='500Mi' -n monitoring --dry-run
+# kubectl apply -f a.yaml -n monitoring
