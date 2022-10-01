@@ -24,4 +24,13 @@ ip ad
 
 !your network interface must be promescues (=1) if you want to capture frames/packets out of it. Fire up wireshark and start monitoring interface and recheck interface info
 # your interface will be on promescues=1
+ip -d -4 a show lo  # Return IPv4 address
+ip -d -6 a show lo  # Returns Ipv6 Address
+ip -s -6 a show lo  # Returns Statistics about packet drops/sizes etc
+```
+### Ip route
+```diff
+ip route
+#gets the details about routing of the system
+
 ```
