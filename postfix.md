@@ -132,16 +132,37 @@ mail
 
 
 ##  Send mail to GMAIL
-```
-# Sending to 10minutesmail works gmail does strict checking and failing currently
+
+~~Sending to 10minutesmail works gmail does strict checking and failing currently
 mail
 > mail
-# type your mail and ControlD it
-# cat /var/log/mail.log  shows failure because:
-# The IP address sending this message does not have a 550-5.7.25 PTR record setup, or the corresponding forward DNS entry does not 550-5.7.25 point to the sending IP. As a policy, Gmail does not accept messages 550-5.7.25 from IPs with missing PTR records. Please visit 550-5.7.25  https://support.google.com/mail/answer/81126#ip-practices for more 550 5.7.25 information. pg14-20020a17090b1e0e00b0020297249987si1158190pjb.124 - gsmtp (in reply to end of DATA command))
+type your mail and ControlD it
+cat /var/log/mail.log  shows failure because:
+ The IP address sending this message does not have a 550-5.7.25 PTR record setup, or the corresponding forward DNS entry does not 550-5.7.25 point to the sending IP. As a policy, Gmail does not accept messages 550-5.7.25 from IPs with missing PTR records. Please visit 550-5.7.25  https://support.google.com/mail/answer/81126#ip-practices for more 550 5.7.25 information. pg14-20020a17090b1e0e00b0020297249987si1158190pjb.124 - gsmtp (in reply to end of DATA command))
+Not sure what exactly the issue (I'll update if I get to know about it in future)~~
 
-# Not sure what exactly the issue (I'll update if I get to know about it in future)
+It was solved by createing Reverse DNS record (rDNS) and pointing to your host name
+```
+  $ dig -x 103.13.112.119
 
+; <<>> DiG 9.18.6 <<>> -x 103.13.112.119
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 52664
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;119.112.13.103.in-addr.arpa.   IN      PTR
+
+;; ANSWER SECTION:
+119.112.13.103.in-addr.arpa. 13722 IN   PTR     mail.awcator.in.
+
+;; Query time: 0 msec
+;; SERVER: 192.168.42.129#53(192.168.42.129) (UDP)
+;; WHEN: Wed Oct 05 18:48:26 IST 2022
+;; MSG SIZE  rcvd: 74
+
+#For Ipv4 support only. Since we have added rDns record for ipv4
 postconf inet_protocols
 sudo postconf -e "inet_protocols = ipv4"
 #replace all to only ipv4
@@ -149,6 +170,8 @@ sudo systemctl restart postfix
 
 # request cloudproiver for PTR record
 # use https://dnschecker.org/ to track DNS record changes
+
+#and the send mail to gmail it should be sent
 ```
 
 # Part 2: Configuring IMAP/POP3 server
