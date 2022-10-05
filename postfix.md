@@ -184,5 +184,122 @@ sudo systemctl restart postfix
 
 #and the send mail to gmail it should be sent
 ```
-# part 2: Linking PostFix with MySQL
+# Part 2: Admin Interface (postfixadmin)
+
+##  LMAP setup
+
+### php config
+```
+apt install php libapache2-mod-php7.4 php-common php7.4 php7.4-cli php7.4-common php7.4-json php7.4-opcache php7.4-readline 
+#restart apache to support php
+systemctl restart apache2
+```
+
+### mariadb config
+```dif
+apt-get -y install php7.4-mariadb
+apt install  mycli/focal mariadb-client/focal-updates mariadb-server/focal-updates postfix-mysql mariadb-server
+mysql_secure_installation
+Enter current password for root (enter for none): <== Your Root Password
+Set root password? [Y/n] <== y (yes)
+New password: <== Here you have to enter your new password
+Re-enter new password: <== Confirm Password
+Remove anonymous users? [Y/n] <== Yes, delete
+Disallow root login remotely? [Y/n] <==Yes, prohibit
+Remove test database and access to it? [Y/n] <== Yes, we do not need the test table
+Reload privilege tables now? [Y/n] <== Yes, reload
+
+mysql -uroot -ps3cr3t
+CREATE DATABASE postfix;
+CREATE USER 'postfix'@'localhost' IDENTIFIED BY 'postfixapppassowrd';
+GRANT ALL PRIVILEGES ON `postfix` . * TO 'postfix'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### back to installation
+
+```diff
+# https://github.com/postfixadmin/postfixadmin/blob/master/INSTALL.TXT
+$ cd /srv/
+$ wget -O postfixadmin.tgz https://github.com/postfixadmin/postfixadmin/archive/postfixadmin-3.3.10.tar.gz
+$ tar -zxvf postfixadmin.tgz
+$ mv postfixadmin-postfixadmin-3.3 postfixadmin
+ln -s /srv/postfixadmin/public /var/www/html/postfixadmin
+mkdir -p /srv/postfixadmin/templates_c
+chown -R www-data /srv/postfixadmin/templates_c
+php -r 'echo password_hash("password", PASSWORD_DEFAULT);'
+#$2y$10$W3AOkOj16uxBGCSMOwg2OOq2jJbq2SEvF9l/PExpHSF.EPOdDKAwq
+  
+#create a file as follows
+root@mail:/srv/postfixadmin# cat config.local.php 
+<?php
+$CONF['database_type'] = 'mysqli';
+$CONF['database_host'] = 'mail.awcator.in';
+$CONF['database_user'] = 'postfix';
+$CONF['database_password'] ='postfixapppassowrd';
+$CONF['database_name'] = 'postfix';
+$CONF['encrypt'] = 'md5crypt';
+$CONF['configured'] = true;
+$CONF['setup_password'] = '$2y$10$W3AOkOj16uxBGCSMOwg2OOq2jJbq2SEvF9l/PExpHSF.EPOdDKAwq';
+?>
+
+# Add the following lines php.ini in /etc/php/7.4/
+
+display_startup_errors
+    On
+
+error_reporting
+    E_ALL
+
+``` 
+
+Below is a sample excerpt from php.ini file which contains the configuration of mbstring variables.
+```diff
+[mbstring]
+mbstring.language = all
+mbstring.internal_encoding = UTF-8
+mbstring.http_input = auto
+mbstring.http_output = UTF-8
+mbstring.encoding_translation = On
+mbstring.detect_order = UTF-8
+mbstring.substitute_character = none;
+mbstring.func_overload = 0
+mbstring.strict_encoding = Off
+
+sudo apt-get install php-mbstring
+
+visit
+http://mail.awcator.in/postfixadmin/setup.php
+```
+if  you followed as previous steps:
+<br>
+your setup_password is "password"
+<br>
+use that password and create a super admin user <br>
+Create a admin user as follows:<br>
+>setUp_password: password<br>
+>Admin: admin@mail.awcator.in<br>
+>Password: hStybCBgW36tJc7<br>
+<br>
+A mysql entry should be added as follows if everything worked
+
+```
+mysql -p -u root
+use postfix
+select * from admin;
+
+| username              | password                           | created             | modified            | active | superadmin | phone | email_other | token | token_validity      |
++-----------------------+------------------------------------+---------------------+---------------------+--------+------------+-------+-------------+-------+---------------------+
+| admin@mail.awcator.in | $1$c9809462$B7qJzNa3EBpWVxqAwERh7. | 2022-10-05 17:47:33 | 2022-10-05 17:47:33 |      1 |          1 |       |             |       | 2022-10-05 17:47:32 |
++-----------------------+------------------------------------+---------------------+---------------------+--------+------------+-------+-------------+-------+---------------------+
+1 row in set (0.001 sec)
+
+
+```
+Now login to the postfix admin page using admin@mail.awcator.in<br>
+http://mail.awcator.in/postfixadmin/login.php<br>
+
+#test the admin user by sending a mail  to your gmail account. Check SPAM sections too to see the mails<br>
+http://mail.awcator.in/postfixadmin/sendmail.php<br>
+
 
