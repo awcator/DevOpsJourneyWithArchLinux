@@ -1,5 +1,7 @@
 https://www.mailgun.com/blog/email/which-smtp-port-understanding-ports-25-465-587/#subchapter-2
-# openssl to query https
+
+# PART 1 (Configuring SMTP server) (Here I have used Postfix as MTA)
+##  openssl to query https
 ```
 openssl s_client -starttls smtp -crlf -connect smtp.mailgun.org:587
 openssl s_client -connect api.mailgun.net:443
@@ -148,3 +150,5 @@ sudo systemctl restart postfix
 # request cloudproiver for PTR record
 # use https://dnschecker.org/ to track DNS record changes
 ```
+
+# Part 2: Configuring IMAP/POP3 server
