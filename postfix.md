@@ -299,6 +299,7 @@ select * from admin;
 Now login to the postfix admin page using admin@mail.awcator.in<br>
 http://mail.awcator.in/postfixadmin/login.php<br>
 
+## Verification and end of part2
 #test the admin user by sending a mail  to your gmail account. Check SPAM sections too to see the mails<br>
 http://mail.awcator.in/postfixadmin/sendmail.php<br>
 
