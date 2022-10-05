@@ -1,5 +1,9 @@
-https://www.mailgun.com/blog/email/which-smtp-port-understanding-ports-25-465-587/#subchapter-2
-
+https://www.mailgun.com/blog/email/which-smtp-port-understanding-ports-25-465-587/#subchapter-2 <br>
+https://support.google.com/mail/answer/81126#ip <br>
+https://dnschecker.org/
+<br>
+I have used AWS Route53 to create MX and A records. PTR record was created inside the another VPS provider (NOn AWS) 
+<br>
 # PART 1 (Configuring SMTP server) (Here I have used Postfix as MTA)
 ##  openssl to query https
 ```
