@@ -304,3 +304,5 @@ http://mail.awcator.in/postfixadmin/login.php<br>
 http://mail.awcator.in/postfixadmin/sendmail.php<br>
 
 
+
+# Step 3 : Configure PostFix to link users from mysql database
