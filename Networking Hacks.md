@@ -30,3 +30,11 @@ localMachibe ========Machine1 =========Machine 2
 
 ### Send raw TCP/IP Packets into the network
 [Check this ](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/wireshark/setup.md#to-send-raw-packets-into-the-network-this-can-be-used-to-test-tcp-behaviour)
+
+### Remove all privilaged PORTS (Allow non root user to listen on 80 etc )
+```
+#save configuration permanently
+echo 'net.ipv4.ip_unprivileged_port_start=0' > /etc/sysctl.d/50-unprivileged-ports.conf
+#apply conf
+sysctl --system
+```
