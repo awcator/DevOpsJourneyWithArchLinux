@@ -43,3 +43,4 @@ sysctl --system
 # basically service running port 3000 consumes whatever is fed on port 80
 iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000
 ```
+[For Deletion and much more opertations using iptables ](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/networking/iptables.md#delete-ip-table-nat-rule)
