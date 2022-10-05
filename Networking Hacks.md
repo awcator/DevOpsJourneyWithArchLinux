@@ -39,7 +39,7 @@ echo 'net.ipv4.ip_unprivileged_port_start=0' > /etc/sysctl.d/50-unprivileged-por
 sysctl --system
 ```
 ### Route all incomming requests on port 80 (internet facing) to service running on port 3000
-```
-basically service running port 3000 consumes whatever is fed on port 80
+```diff
+# basically service running port 3000 consumes whatever is fed on port 80
 iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000
 ```
