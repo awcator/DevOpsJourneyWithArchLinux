@@ -184,5 +184,5 @@ sudo systemctl restart postfix
 
 #and the send mail to gmail it should be sent
 ```
+# part 2: Linking PostFix with MySQL
 
-# Part 2: Configuring IMAP/POP3 server
