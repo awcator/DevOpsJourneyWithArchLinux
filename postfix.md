@@ -133,13 +133,20 @@ mail
 
 ##  Send mail to GMAIL
 
-~~Sending to 10minutesmail works gmail does strict checking and failing currently
-mail
-> mail
-type your mail and ControlD it
-cat /var/log/mail.log  shows failure because:
- The IP address sending this message does not have a 550-5.7.25 PTR record setup, or the corresponding forward DNS entry does not 550-5.7.25 point to the sending IP. As a policy, Gmail does not accept messages 550-5.7.25 from IPs with missing PTR records. Please visit 550-5.7.25  https://support.google.com/mail/answer/81126#ip-practices for more 550 5.7.25 information. pg14-20020a17090b1e0e00b0020297249987si1158190pjb.124 - gsmtp (in reply to end of DATA command))
-Not sure what exactly the issue (I'll update if I get to know about it in future)~~
+~~Sending to 10minutesmail works gmail does strict checking and failing currently~~
+<br>
+~~mail~~
+<br>
+~~> mail~~
+<br>
+~~type your mail and ControlD it~~
+<br>
+~~cat /var/log/mail.log  shows failure because:~~
+<br>
+~~The IP address sending this message does not have a 550-5.7.25 PTR record setup, or the corresponding forward DNS entry does not 550-5.7.25 point to the sending IP. As a policy, Gmail does not accept messages 550-5.7.25 from IPs with missing PTR records. Please visit 550-5.7.25 https://support.google.com/mail/answer/81126#ip-practices for more 550 5.7.25 information. pg14-20020a17090b1e0e00b0020297249987si1158190pjb.124 - gsmtp (in reply to end of DATA command))~~
+<br>
+~~Not sure what exactly the issue (I'll update if I get to know about it in future)~~
+<br>
 
 It was solved by createing Reverse DNS record (rDNS) and pointing to your host name
 ```
