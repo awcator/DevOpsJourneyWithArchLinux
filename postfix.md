@@ -401,5 +401,6 @@ general_log_file=/var/log/mysql/mysql.log
 ```
 
 ## vertification
-send mail to mysql user created from postfix admin page and confrim mails at location /var/mail/vmail/mail.awcator.in/<userhere>
-	
+send mail to mysql user created from postfix admin page and confrim mails at location /var/mail/vmail/mail.awcator.in/<userhere> .
+
+# Step 4
