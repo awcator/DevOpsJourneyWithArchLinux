@@ -305,7 +305,7 @@ http://mail.awcator.in/postfixadmin/sendmail.php<br>
 
 
 
-# Step 3 : Configure PostFix to link users from mysql database
+# PART 3 : Configure PostFix to link users from mysql database
 https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/postfix.md <br>
 https://wiki.gentoo.org/wiki/Complete_Virtual_Mail_Server/Postfix_to_Database <br>
 https://gist.github.com/aryklein/51cc0d94b2693120abd4 <br>
@@ -401,6 +401,7 @@ general_log_file=/var/log/mysql/mysql.log
 ```
 
 ## vertification
-send mail to mysql user created from postfix admin page and confrim mails at location /var/mail/vmail/mail.awcator.in/<userhere> .
+send mail to mysql user created from postfix admin page and confrim mails at location /var/mail/vmail/mail.awcator.in/user .
 
-# Step 4
+# PART 4: DoveCot as IMAP
+
