@@ -306,3 +306,100 @@ http://mail.awcator.in/postfixadmin/sendmail.php<br>
 
 
 # Step 3 : Configure PostFix to link users from mysql database
+https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/postfix.md <br>
+https://wiki.gentoo.org/wiki/Complete_Virtual_Mail_Server/Postfix_to_Database <br>
+https://gist.github.com/aryklein/51cc0d94b2693120abd4 <br>
+https://github.com/postfixadmin/postfixadmin/blob/master/DOCUMENTS/POSTFIX_CONF.txt <br>
+https://github.com/postfixadmin/postfixadmin/blob/master/DOCUMENTS/Postfix-Dovecot-Postgresql-Example.md <br>
+
+Create Domain List
+Create MailBox list for the domain
+Create MailBox list for the domain x2
+Create alias for the domain using postfixadmin
+
+mkdir /etc/postfix/mysql
+
+create a file as follows:
+
+```
+==> virtual_mailbox_domains.cf <==
+user            = postfix
+password        = postfixapppassowrd
+dbname          = postfix
+hosts          = unix:/var/run/mysqld/mysqld.sock
+query           = SELECT domain FROM domain WHERE domain = '%s' AND backupmx = '0' AND active = '1';
+
+==> virtual_mailbox_maps.cf <==
+user            = postfix
+password        = postfixapppassowrd
+dbname          = postfix
+#hosts          = localhost
+hosts           = unix:/var/run/mysqld/mysqld.sock
+query           = SELECT maildir FROM mailbox WHERE username='%s' AND active = '1';
+
+==> virtual_mailbox_transport.cf <==
+user            = postfix
+password        = postfixapppassowrd
+dbname          = postfix
+hosts          = unix:/var/run/mysqld/mysqld.sock
+query = SELECT REPLACE(transport, 'virtual', ':') AS transport FROM domain WHERE domain='%s' AND active = '1'
+
+
+```
+Remove all from "mydestination" in /etc/postfix/main.cf and make it like
+```
+mydestination = localhost
+# This is because to diffrentaiate local table and virtual table.
+# since mail.awcator.in stays in virtual transportor
+```
+
+Add following lines to /etc/postfix/main.cf
+```
+virtual_mailbox_domains = mysql:/etc/postfix/mysql/virtual_mailbox_domains.cf
+virtual_transport = virtual
+virtual_mailbox_base = /var/mail/vmail
+virtual_mailbox_maps = mysql:/etc/postfix/mysql/virtual_mailbox_maps.cf
+virtual_uid_maps = static:8
+virtual_gid_maps = static:8
+virtual_minimum_uid = 8
+
+mailbox_size_limit = 10
+mydestination = localhost
+```
+Setup appropritate permissions
+```
+chown postfix:postfix -R /etc/postfix/mysql/
+find /etc/postfix/ -name "*.cf" -exec chmod -c 640 '{}' \+
+```
+Setup Approppriate perssmison for our mysqluser (I used as root clone)
+```
+GRANT ALL ON *.* to postfix@'%' IDENTIFIED BY 'postfixapppassowrd';
+GRANT ALL ON *.* to postfix@localhost IDENTIFIED BY 'postfixapppassowrd';
+```
+Mount mysql socket to chroot jailed mail server
+```
+$ pid = `ps -ef | grep postfix | grep pickup | awk '{print $2}'`
+$ sudo ls -l /proc/$pid/root
+It will give you something like this:
+
+$ sudo ls -l /proc/3233/root
+lrwxrwxrwx 1 root root 0 Jun  1 15:37 /proc/3233/root -> /var/spool/postfix
+To solve this issue, you have to mount the database socket path inside the Postfix jail
+
+
+mount -o bind /var/run/mysqld /var/spool/postfix/var/run/mysqld
+```
+
+
+
+enable logging with MYSQL, edit /etc/mysql/my.cnf with <br>
+it helped in  debugging postfix's quering mysql
+```
+[mysqld]
+general_log = on
+general_log_file=/var/log/mysql/mysql.log
+```
+
+## vertification
+send mail to mysql user created from postfix admin page and confrim mails at location /var/mail/vmail/mail.awcator.in/<userhere>
+	
