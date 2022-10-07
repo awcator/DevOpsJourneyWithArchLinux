@@ -522,6 +522,12 @@ userdb extra fields:
   gid=1003
   quota=dirsize:storage=10240000
 
+# without LMTP
+I changed dovcot-sql.conf userpermissions to read their mails as follows
+
+user_query = SELECT '/var/mail/vmail/%d/%n' as home, 'maildir:/var/mail/vmail/%d/%n' as mail, 8 AS uid, 1003 AS gid, concat('dirsize:storage=',  quota) AS quota FROM mailbox WHERE username = '%u' AND active = '1'
+where 8 is mail euid
+where 1003 is mailers guid
 ```
 
 # PART 5: Dovecot as LMTP 
