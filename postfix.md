@@ -498,7 +498,7 @@ password_query = SELECT username as user, password, '/home/vmail/%d/%n' as userd
 #password_query = SELECT null AS password, ‘%u’ AS user
 
 ```
-To test login
+### verification
 ```diff
 dovecot auth login testuser
 # we configured to pull maisl from /var/mail/vmail/mail.awcator.in/cwcator/cur
@@ -508,3 +508,5 @@ chmod -R a+rwx /var/mail/vmail/
 
 you can test from across internet using IMAP clients like BlueMail/Thunderbird etc
 ```
+
+# PART 5: Dovecot as LMTP 
