@@ -507,6 +507,21 @@ dovecot auth login testuser
 chmod -R a+rwx /var/mail/vmail/
 
 you can test from across internet using IMAP clients like BlueMail/Thunderbird etc
+
+root@mail:/home/awcator# dovecot auth login cwcator@mail.awcator.in
+Password: 
+passdb: cwcator@mail.awcator.in auth succeeded
+extra fields:
+  user=cwcator@mail.awcator.in
+  
+userdb extra fields:
+  cwcator@mail.awcator.in
+  home=/var/mail/vmail/mail.awcator.in/cwcator
+  mail=maildir:/var/mail/vmail/mail.awcator.in/cwcator
+  uid=1003
+  gid=1003
+  quota=dirsize:storage=10240000
+
 ```
 
 # PART 5: Dovecot as LMTP 
