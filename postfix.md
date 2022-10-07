@@ -404,4 +404,107 @@ general_log_file=/var/log/mysql/mysql.log
 send mail to mysql user created from postfix admin page and confrim mails at location /var/mail/vmail/mail.awcator.in/user .
 
 # PART 4: DoveCot as IMAP
+https://doc.dovecot.org/configuration_manual/config_file/config_variables/
+https://github.com/postfixadmin/postfixadmin/blob/master/DOCUMENTS/Postfix-Dovecot-Postgresql-Example.md
+https://wiki.archlinux.org/title/Virtual_user_mail_system_with_Postfix,_Dovecot_and_Roundcube#Dovecot
 
+~~create a same groups so dovecot can read postfixs mail~~ <br>
+~~rm -rf vmail/ <br>
+sudo groupadd mailers <br>
+sudo usermod -a -G mailers postfix <br>
+sudo usermod -a -G mailers dovecot<br>
+sudo chgrp -R mailers /var/mail/vmail/<br> 
+sudo chmod -R 770 /var/mail/vmail/~~<br>
+
+
+~~chgrp -R mailers vmail/<br>
+chmod -R 2777 vmail/<br>
+Notedown the group id of mailers == for me 1003~~
+
+For memory settings put this in  /etc/postfix/main.cf
+
+```
+mailbox_size_limit = 0
+message_size_limit = 0
+virtual_mailbox_limit = 0
+# 0 signifies unlimited
+``` 
+Previosuly we setuped virtual users. to test local users mail at localhost domain
+```
+echo "bwcatopr " |mail bwcator@localhost
+where bwcator is posix account
+```
+
+Install Dovecot as IMAP server
+~~apt-get install dovecot-mysql dovecot-lmtpd  dovecot-imapd dovecot-managesieved dovecot-sqlite~~
+```
+apt-get install dovecot-mysql   dovecot-imapd
+
+systemctl status dovecot
+systemctl start dovecot
+
+#port 993=IMAPS
+#port 143=IMAP
+
+check /usr/share/dovecot/protocols.d/ to see modules it is loaded or 
+protocols = imap   in  /etc/dovecot/dovecot.conf
+```
+Configure Dovecot for IMAP
+```
+# put this in /etc/dovecot/dovecot.conf
+
+protocols = imap
+auth_mechanisms = plain
+passdb {
+    driver = sql
+    args = /etc/dovecot/dovecot-sql.conf
+}
+userdb {
+    driver = sql
+    args = /etc/dovecot/dovecot-sql.conf
+}
+ 
+service auth {
+    unix_listener auth-client {
+        group = postfix
+        mode = 0660
+        user = postfix
+    }
+    user = root
+}
+
+mail_home = /var/mail/vmail/%d/%n
+auth_verbose=yes
+auth_debug=yes 
+auth_debug_passwords=yes
+mail_debug=yes 
+log_path = /var/log/dovecot.log
+disable_plaintext_auth = no
+mail_location = maildir:~
+
+
+# create a dovecto-sql conf in same directory as :
+
+root@mail:/etc/dovecot# cat /etc/dovecot/dovecot-sql.conf
+driver = mysql
+connect = host=localhost dbname=postfix user=postfix password=postfixapppassowrd
+# It is highly recommended to not use deprecated MD5-CRYPT. Read more at http://wiki2.dovecot.org/Authentication/PasswordSchemes
+default_pass_scheme = MD5-CRYPT
+# Get the mailbox
+user_query = SELECT '/var/mail/vmail/%d/%n' as home, 'maildir:/var/mail/vmail/%d/%n' as mail, 1003 AS uid, 1003 AS gid, concat('dirsize:storage=',  quota) AS quota FROM mailbox WHERE username = '%u' AND active = '1'
+# Get the password
+password_query = SELECT username as user, password, '/home/vmail/%d/%n' as userdb_home, 'maildir:/home/vmail/%d/%n' as userdb_mail, 5000 as  userdb_uid, 5000 as userdb_gid FROM mailbox WHERE username = '%u' AND active = '1'
+# If using client certificates for authentication, comment the above and uncomment the following
+#password_query = SELECT null AS password, ‘%u’ AS user
+
+```
+To test login
+```diff
+dovecot auth login testuser
+# we configured to pull maisl from /var/mail/vmail/mail.awcator.in/cwcator/cur
+!# the problem is here postfix write mails to this directory but without neccasry permission dovecot cant read up the mails
+!# to fix this problem as temp solution make
+chmod -R a+rwx /var/mail/vmail/
+
+you can test from across internet using IMAP clients like BlueMail/Thunderbird etc
+```
