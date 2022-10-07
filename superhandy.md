@@ -17,3 +17,7 @@ xclip -selection c -o
 alias paste="xclip -selection c -o"
 paste|wc -l
 ```
+## cat all files with file name
+```
+tail -n +1 file1.txt file2.txt file3.txt
+```
