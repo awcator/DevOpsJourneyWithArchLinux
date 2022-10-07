@@ -1,0 +1,6 @@
+user            = postfix
+password        = postfixapppassowrd
+dbname          = postfix
+#hosts          = localhost
+hosts		= unix:/var/run/mysqld/mysqld.sock
+query 		= SELECT maildir FROM mailbox WHERE username='%s' AND active = '1';
