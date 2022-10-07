@@ -532,4 +532,66 @@ user_query = SELECT '/var/mail/vmail/%d/%n' as home, 'maildir:/var/mail/vmail/%d
 # where 1003 is mailers guid
 ```
 
-# PART 5: Dovecot as LMTP 
+# PART 5: Configure Postfix Submissions port with Dovecot (port 557)
+
+https://serverfault.com/questions/698854/postfix-fatal-specify-a-password-table-via-the-smtp-sasl-password-maps-config <br>
+add these in /etc/postfix/main.cf <br>
+```
+smtpd_sasl_auth_enable = yes
+
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_authenticated_header = yes
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_security_options = noanonymous
+broken_sasl_auth_clients = yes
+```
+enable SMTP submission in  master.cf
+```
+submission inet n       -       y       -       -       smtpd
+  -o syslog_name=postfix/submission
+  #-o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  #-o smtpd_tls_auth_only=yes
+  -o smtpd_reject_unlisted_recipient=no
+  #-o smtpd_client_restrictions=$mua_client_restrictions
+  #-o smtpd_helo_restrictions=$mua_helo_restrictions
+  #-o smtpd_sender_restrictions=$mua_sender_restrictions
+  #-o smtpd_recipient_restrictions=
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+
+```
+Add these in dovecot.conf
+```diff
+#If you want, you can have dovecot automatically add a Trash and Sent folder to mailboxes:
+protocol imap {
+  mail_plugins = " autocreate"
+}
+plugin {
+  autocreate = Trash
+  autocreate2 = Sent
+  autosubscribe = Trash
+  autosubscribe2 = Sent
+}
+first_valid_uid=0
+auth_mechanisms = plain
+
+service auth {
+#remove ! below line, just to show i have changed this line
+!    unix_listener /var/spool/postfix/private/auth { 
+        group = postfix
+        mode = 0660
+        user = postfix
+    }
+    user = root
+}
+
+```
+restart all the services
+```
+systemctl restart postfix dovecot
+```
+
+### verification
+start sending mails from mail client by congiuring it to connect on SMTP Submission PORT 587
