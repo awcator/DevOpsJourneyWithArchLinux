@@ -4,6 +4,9 @@ https://dnschecker.org/
 <br>
 I have used AWS Route53 to create MX and A records. PTR record was created inside the another VPS provider (NOn AWS) 
 <br>
+# Part 0: Practise Telnet and other mail clients on working SMTP server like GMAIL before crateing your own
+[Telnet Way of sending mails ](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/telnet/smtpDemo.md#telnet-way-to-send-mails) <br>
+[SSMTP client way of sending mails](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/superhandy.md#send-mail-from-your-smtp-server) <br>
 # PART 1 (Configuring SMTP server) (Here I have used Postfix as MTA)
 ##  openssl to query https
 ```
