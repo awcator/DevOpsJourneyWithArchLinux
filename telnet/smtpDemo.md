@@ -1,4 +1,4 @@
-telnet way to send mails
+### telnet way to send mails
 ```
 [>] means telnet ouput
 [<] means my inputs to telnet
