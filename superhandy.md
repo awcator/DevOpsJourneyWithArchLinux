@@ -38,3 +38,4 @@ DEBIAN_FRONTEND=noninteractive
 apt-get install -y libreadline-dev ssmtp mailutils vim
 root@busybox3:/etc/ssmtp# ssmtp -d9 oivnmblydqzlkfxras@tmmwj.com <a.txt
 ```
+[using telnet from scratch](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/telnet/smtpDemo.md#telnet-way-to-send-mails)
