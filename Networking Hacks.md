@@ -21,6 +21,11 @@ curl localhost:1234   #imples === curl machine2:3389
 
 localMachibe ========Machine1 =========Machine 2
 ```
+### Socks Proxy using SSH
+```
+ssh -o "StrictHostKeyChecking no" -N -D 9090 user@host
+# use chrome extensions like foxyproxy to get forward the tarrrfic
+```
 
 ### Establish SSL connnectivity between two non SSL servers
 [Check this](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/prometheus.md#mutal-sslconnectivity-between-non-ssl-premethus-and-non-ssl-nodeexportyer)
