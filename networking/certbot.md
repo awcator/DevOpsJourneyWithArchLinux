@@ -12,3 +12,22 @@ Renew
 ```
 sudo certbot renew --dry-run
 ```
+Configure Apache with SSL certs from certbot
+```
+apt-get update
+apt-get install apache2 openssl
+
+a2enmod ssl
+a2enmod rewrite
+
+systemctl restart apache2
+#add these lines in /etc/apache2/sites-enabled
+
+<VirtualHost *:443>
+    ServerName www.awcator.in
+    SSLEngine on
+    SSLCertificateFile "/etc/letsencrypt/live/awcator.in/cert.pem"
+    SSLCertificateKeyFile "/etc/letsencrypt/live/awcator.in/privkey.pem"
+</VirtualHost>
+systemctl restart apache2
+```
