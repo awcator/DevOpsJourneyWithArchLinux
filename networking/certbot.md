@@ -8,3 +8,7 @@ sudo ufw allow 80
 
 #Certs are locaed at /etc/letsencrypt/live/
 ```
+Renew
+```
+sudo certbot renew --dry-run
+```
