@@ -7,6 +7,12 @@ sudo ufw allow 80
 # If you’re using port 80, you want --preferred-challenges http. For port 443 it would be --preferred-challenges tls-sni
 
 #Certs are locaed at /etc/letsencrypt/live/
+
+#wildcard support
+sudo apt install python3-certbot-dns-route53
+certbot plugins
+
+sudo certbot certonly --dns-route53 -d *.awcator.in -d awcator.in
 ```
 Renew
 ```
