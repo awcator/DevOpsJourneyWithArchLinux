@@ -16,7 +16,10 @@ CREATE USER <username> WITH ENCRYPTED PASSWORD ‘<password>’;
 CREATE DATABASE <dbname>;
 GRANT ALL PRIVILEGES ON DATABASE <dbname> TO username;
 ```
-
+Enhancments:
+```
+yay -S pgcli
+```
 Uninstall
 ```
 pacman -Rcns postgresql
