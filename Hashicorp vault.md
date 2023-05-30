@@ -194,7 +194,6 @@ authorityKeyIdentifier  = keyid,issuer:always
 keyUsage   =  critical, digitalSignature, keyEncipherment
 extendedKeyUsage  = serverAuth
 
-
 ```
 #### generate Root certificates
 ```diff 
@@ -380,4 +379,43 @@ curl https://abcd.google.com works
 #### after trusting CA
 ![image](https://user-images.githubusercontent.com/54628909/236613900-c54fde5e-d2a5-4259-928f-18a8b938f895.png)
 
+verify certificate status:
+```diff
+ openssl verify -CAfile ca/certs/ca.crt -untrusted intermediate-ca/certs/intermediateCa.crt server/server.crt
+ # or
+ ```
+![image](https://github.com/awcator/DevOpsJourneyWithArchLinux/assets/54628909/a5b0c93f-f286-451e-9409-808c3adfc8fa)
+![image](https://github.com/awcator/DevOpsJourneyWithArchLinux/assets/54628909/31b157fd-2d53-42df-b7ba-550c3203e598)
+#### csr and CRL
+simple CertificateSigning Request config file
+```
+[req]
+req_extensions = san_extensions
 
+[san_extensions]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = example.com
+DNS.2 = www.example.com
+otherName.0 = 1.2.3.4;UTF8:customvalue
+otherName.1 = 1.2.3.5;UTF8:customvalue2
+```
+TO create csr: 
+```
+openssl req -new -sha256 -nodes -out out.csr -newkey rsa:2048 -keyout server.key -subj "/CN=awcator.com" -reqexts san_extensions -config ./csrConfig
+
+openssl ca -extensions v3_intermediate_ca -config ca/config  -days 3650 -notext -in intermediate-ca/intermediate_Ca.csr -out intermediate-ca/intermediateCa.crt
+ penssl ca -config intermediate-ca/config -extensions server_cert -days 365 -notext -in server2/my.csr -out server2/server.crt -verbose
+
+```
+to generate CRL:
+```
+cat ca/index
+R       220904031732Z   210904032109Z   01      unknown /C=IN/ST=India/O=Awcator Ltd/CN=Intermediate
+V       220904031929Z           02      unknown /C=IN/ST=India/O=Awcator Ltd/CN=Intermediate1
+
+faketime "last year" openssl ca -config ca/config -gencrl -crl_reason unspecified
+openssl crl -in /root/tls/crl/rootca.crl -text -noout
+https://www.golinuxcloud.com/revoke-certificate-generate-crl-openssl/
+````
