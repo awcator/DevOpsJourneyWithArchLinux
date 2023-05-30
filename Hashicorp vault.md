@@ -410,6 +410,13 @@ openssl ca -extensions v3_intermediate_ca -config ca/config  -days 3650 -notext 
 
 ```
 to generate CRL:
+```diff
+# revoke cert
+openssl ca -config ca/config -revoke ca/certs/intermediate-server-1.crt
+or manully add entry in ca/index and generate CRL 
+
+after anyone of both, rebuild the CRL
+```
 ```
 cat ca/index
 R       220904031732Z   210904032109Z   01      unknown /C=IN/ST=India/O=Awcator Ltd/CN=Intermediate
