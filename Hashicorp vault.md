@@ -426,3 +426,79 @@ faketime "last year" openssl ca -config ca/config -gencrl -crl_reason unspecifie
 openssl crl -in /root/tls/crl/rootca.crl -text -noout
 https://www.golinuxcloud.com/revoke-certificate-generate-crl-openssl/
 ````
+
+
+#### public key operations
+retriving
+```
+# from private key
+openssl rsa -in ca/ca_private.key -pubout -out parent_public_key.pem
+# from certificate
+openssl x509 -in ca/certs/ca.crt -noout -pubkey -out ca_publickey.pem
+
+# converting pkcs8 to pkcs1
+openssl rsa -pubin -inform PEM -in parent_public_key.pem -RSAPublicKey_out -outform PEM -out public_key_pkcs1.pem
+```
+#### Subject Key Identifier (SKI) and Authority Key Identifier (AKI)
+Extracting SKI: 
+```
+4.2.1.2  Subject Key Identifier
+
+   The subject key identifier extension provides a means of identifying
+   certificates that contain a particular public key.
+
+   To facilitate certification path construction, this extension MUST
+   appear in all conforming CA certificates, that is, all certificates
+   including the basic constraints extension (section 4.2.1.10) where
+   the value of cA is TRUE.  The value of the subject key identifier
+   MUST be the value placed in the key identifier field of the Authority
+   Key Identifier extension (section 4.2.1.1) of certificates issued by
+   the subject of this certificate.
+
+   For CA certificates, subject key identifiers SHOULD be derived from
+   the public key or a method that generates unique values.  Two common
+   methods for generating key identifiers from the public key are:
+
+      (1) The keyIdentifier is composed of the 160-bit SHA-1 hash of the
+      value of the BIT STRING subjectPublicKey (excluding the tag,
+      length, and number of unused bits).
+
+      (2) The keyIdentifier is composed of a four bit type field with
+      the value 0100 followed by the least significant 60 bits of the
+      SHA-1 hash of the value of the BIT STRING subjectPublicKey
+      (excluding the tag, length, and number of unused bit string bits).
+```
+read : http://certificateerror.blogspot.com/2011/02/how-to-validate-subject-key-identifier.html
+to get SKI, first step is to get BITSTRING part.
+get the BIT STRING from public key:
+```
+cat parent_public_key.pem|openssl asn1parse
+```
+![image](https://github.com/awcator/DevOpsJourneyWithArchLinux/assets/54628909/5512c02f-db91-436b-819f-d9ee3c4303a7)
+```
+cat parent_public_key.pem|openssl asn1parse    -strparse 19 -out a.der
+cat a.der |openssl dgst -c -sha1
+
+# -strparse 19 skips the first 19 bytes, a magic number. Typically the public keys is in PKCS#1 format. So for an RSA public key of 2048 bits it starts with 4 bytes of SEQUENCE, 2 bytes of SEQUENCE, 11 bytes to store the OID 1.2.840.113549.1.1.1 meaning rsaEncryption, 2 bytes for a NULL terminator on the sequence. That is 19 bytes, which starts the BIT STRING data structure and continues to the end of the data.
+
+```
+~~openssl x509 -in GSRootCA-2014.cer -inform DER -pubkey -noout|openssl rsa -pubin -outform DER| openssl dgst -c -sha1~~
+![image](https://github.com/awcator/DevOpsJourneyWithArchLinux/assets/54628909/28299c2d-7a34-4934-a342-f2f160029018)
+
+or 
+```
+# from cert get SKI
+openssl x509  -noout -in ca/certs/ca.crt -pubkey  | openssl asn1parse  -strparse 19 -noout -out - | openssl dgst -c -sha1
+# from public key
+cat publicKey.pem| openssl asn1parse -strparse 19 -noout -out - | openssl dgst -c -sha1
+```
+|                   | Subject Key Identifier (SKI)                    | Authority Key Identifier (AKI)                       |
+|-------------------|-------------------------------------------------|-----------------------------------------------------|
+| Purpose           | Identifies the subject's public key               | Identifies the issuer's (authority's) public key    |
+| Usage             | Helps in certificate chaining and verification   | Helps in certificate chaining and verification      |
+| Value             | Derived from the subject's public key            | Derived from the issuer's (authority's) public key  |
+| Representation    | Hash or fingerprint of the subject's public key  | Hash or fingerprint of the issuer's public key      |
+| Relationship      | Unique identifier for the subject's key          | Unique identifier for the issuer's (authority's) key|
+| Matching          | Used to match with the issuer's SKI              | Used to match with the subject's AKI                |
+| Certificate Chain | SKI of a certificate is placed in the AKI of the issuing certificate | AKI of a certificate is placed in the SKI of the issued certificate |
+
