@@ -28,3 +28,29 @@ sudo mount /dev/mapper/myencryptedpartition /mnt/myencryptedpartition
 sudo umount /mnt/myencryptedpartition
 sudo cryptsetup close myencryptedpartition 
 ```
+# Luks without headers in partition
+![image](https://github.com/awcator/DevOpsJourneyWithArchLinux/assets/54628909/07bc799a-ffac-4bbb-8b86-f62aa338cf4e)
+LUKS enrypt and decrypts the file contents using the masterKey, offcrouse masterKey is dervied key from the passPhrase using some encryption algo.
+It is still safer to exclude that header info from the disk, so to encrypt and to decrypt you now need both header and passphtrase.
+read : https://linuxconfig.org/how-to-use-luks-with-a-detached-header
+```
+# view LUKS headers info, eye friendly way
+sudo cryptsetup luksDump /dev/sdb
+sudo cryptsetup luksHeaderBackup /dev/sda7 --header-backup-file ~/luksHB.img
+
+# rewrite disk with zeros
+cd /tmp/
+sudo dd if=/dev/zero of=/dev/sda7 bs=1M status=progress
+sudo cryptsetup luksFormat --header mybk /dev/sda7
+sudo dd if=/dev/sda7|head # should show empty as there is no content , and headers are outisde
+sudo cryptsetup open --header /tmp/mybk /dev/sda7 myencryptedpartition
+sudo mkfs.ext4 /dev/mapper/myencryptedpartition
+sudo dd if=/dev/sda7|head # now contains ext4 realted info
+sudo mount /dev/mapper/myencryptedpartition /mnt/myencryptedpartition
+
+```
+It is possible still  we can attach back headers to partion using
+```
+sudo cryptsetup luksHeaderRestore /dev/sda7 --header-backup-file /path/to/myheaderbackup.img
+
+```
