@@ -60,3 +60,19 @@ sudo cryptsetup luksHeaderRestore /dev/sda7 --header-backup-file /path/to/myhead
 # sometimes things go wrong, insted of writing entrie disk with zeros, for quick, just erase first 16MiB, usally this contains  partition details
 dd if=/dev/zero of=/dev/sda7 bs=4096 count=4096
 ```
+
+# Automount using fstab
+add in /etc/crypttab
+```
+awcatorlux      /dev/sda7       none    luks,header=/home/Awcator/mybk
+# if luks is running with headers, remove headers option in cryptab
+```
+add in /etc/fstab
+```
+ /dev/mapper/awcatorlux /mnt/disk1 ext4 nofail 0 0 
+ #UUID=1cb90895-f3a6-467c-bb05-324f4ec85e1d /mnt/disk1 auto nosuid,nodev,nofail 0 0
+ 
+ #bind to some other directory using
+ /mnt/disk1 /home/Awcator/Downloads/Compressed auto nofail,bind 0 0 
+
+```
