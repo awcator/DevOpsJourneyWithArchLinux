@@ -57,6 +57,6 @@ sudo cryptsetup luksHeaderRestore /dev/sda7 --header-backup-file /path/to/myhead
 
 # Nuke the partition
 ```
-# sometimes things go wrong, insted of writing entrie disk with zeros, for quick, just erase first 16MiB, usally this contains  filesystem detaisl,partition details
+# sometimes things go wrong, insted of writing entrie disk with zeros, for quick, just erase first 16MiB, usally this contains  partition details
 dd if=/dev/zero of=/dev/sda7 bs=4096 count=4096
 ```
