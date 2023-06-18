@@ -75,4 +75,6 @@ add in /etc/fstab
  #bind to some other directory using
  /mnt/disk1 /home/Awcator/Downloads/Compressed auto nofail,bind 0 0 
 
+# to get blkid :
+sudo blkid /dev/sda7 
 ```
