@@ -14,6 +14,28 @@ sudo lxc-create --name=awcatorNodesArch --template=download -- --dist archlinux 
 sudo lxc-create -t download -n my-container
 # roottfs will be downloaded to /var/cache/lxc/download/
 sudo lxc-ls
+
+#lxd setup
+pacman -Sy lxd
+sudo groupadd lxd
+# register user to lxd group. where awcator is my host user
+sudo gpasswd -a awcator lxd
+# verify
+getent group lxd
+# or
+id
+# or
+groups
+
+#if id dnst reflect group changes. do relogin or use
+newgrp lxd
+
+systemctl start lxd
+systemctl status lxd
+```
+# settingup LXD
+```
+l
 ```
 # Settingup LXC network
 Host bridge network read : https://wiki.archlinux.org/title/Network_bridge
@@ -28,6 +50,10 @@ sudo pacman -S bridge-utils
 sudo brctl addbr lxcbr0
 sudo ip addr add 10.0.0.1/24 dev lxcbr0
 sudo ip link set dev lxcbr0 up
+#add entry in sudo cat /var/lib/lxc/awcatorNodesArch/config
+lxc.net.0.ipv4.address = 10.0.0.2/24  
+lxc.net.0.ipv4.gateway = 10.0.0.1
+
 sudo systemctl restart lxc.service
 # lxc-net.service creates network
 sudo lxc-start -n awcatorNodesArch
