@@ -1,5 +1,5 @@
 # Create bridge network
-```
+```diff
 
   +-------------------------------------------------------------+
   |                     Node IP: 192.168.42.210                 |
@@ -141,7 +141,8 @@ sudo ip route add $TO_BRIDGE_SUBNET via $TO_NODE_IP dev eth0
 ```
 
 ## cleanup
-```
+```diff
+-cleanup
 sudo ip link set $veth_bridge_to_ns1_endpoint_name down
 sudo ip link set $veth_bridge_to_ns2_endpoint_name down
 sudo ip link delete $veth_bridge_to_ns2_endpoint_name
