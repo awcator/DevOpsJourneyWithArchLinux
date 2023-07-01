@@ -10,7 +10,9 @@ iptables -t nat -D PREROUTING 2
 ```
 ## ADD IPTable NAT rule to Internal Port_forward
 ```
-iptables /-t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000
+sudo iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000
+# or
+sudo iptables -t nat -A OUTPUT -p tcp --dport 90 -j DNAT --to-destination 192.168.42.210:4444
 ```
 [Refer](https://unix.stackexchange.com/questions/85932/how-can-i-redirect-outbound-traffic-to-port-80-using-iptables-locally)
 [Refer](https://unix.stackexchange.com/questions/487949/iptables-blocking-local-traffic?noredirect=1&lq=1)
@@ -21,7 +23,7 @@ sudo iptables -t nat -I PREROUTING -p tcp -d 10.32.255.191 --dport 15672 -j DNAT
 ```
 
 #### See all the rules defined from all the tabels
-```
+```diff
 get the table names first:
 cat /proc/net/ip_tables_names
 cat /proc/net/ip6_tables_names
@@ -42,7 +44,7 @@ sudo iptables -vL -t security;
 echo "normal";
 sudo iptables -L ;
 
-#flush the tables
+-#flush the tables
 # -f for flush -x delte chains -z reset counter
 sudo iptables -F;
 sudo iptables -X;
