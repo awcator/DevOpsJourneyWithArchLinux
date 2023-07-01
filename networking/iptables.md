@@ -19,3 +19,26 @@ iptables /-t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 3000
 ```
 sudo iptables -t nat -I PREROUTING -p tcp -d 10.32.255.191 --dport 15672 -j DNAT --to-destination 127.0.0.1:15672
 ```
+
+#### See all the rules defined from all the tabels
+```
+get the table names first:
+cat /proc/net/ip_tables_names
+cat /proc/net/ip6_tables_names
+or
+lsmod | grep ip_tables
+
+
+echo "filter";
+sudo iptables -vL -t filter;
+echo "nat";
+sudo iptables -vL -t nat;
+echo "mangle";
+sudo iptables -vL -t mangle;
+echo "raw";
+sudo iptables -vL -t raw;
+echo "security";
+sudo iptables -vL -t security;
+echo "normal";
+sudo iptables -L ;
+```
