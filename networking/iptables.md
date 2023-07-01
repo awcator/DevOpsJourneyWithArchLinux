@@ -41,4 +41,34 @@ echo "security";
 sudo iptables -vL -t security;
 echo "normal";
 sudo iptables -L ;
+
+#flush the tables
+# -f for flush -x delte chains -z reset counter
+sudo iptables -F;
+sudo iptables -X;
+sudo iptables -Z;
+
+
+echo "filter";
+sudo iptables -t filter -F;
+sudo iptables -t filter -X;
+sudo iptables -t filter -Z;
+echo "nat";
+sudo iptables -t nat -F;
+sudo iptables -t nat -X;
+sudo iptables -t nat -Z;
+echo "mangle";
+sudo iptables -t mangle -F;
+sudo iptables -t mangle -X;
+sudo iptables -t mangle -Z;
+echo "raw";
+sudo iptables -t raw -F;
+sudo iptables -t raw -X;
+sudo iptables -t raw -Z;
+echo "security";
+sudo iptables -t security -F;
+sudo iptables -t security -X;
+sudo iptables -t security -Z;
+echo "normal";
+
 ```
