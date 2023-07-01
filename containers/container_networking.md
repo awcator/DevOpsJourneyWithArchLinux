@@ -135,6 +135,9 @@ sudo iptables -A FORWARD -i $hostmachine_iface -o $bridge_name -m state --state 
 sudo iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 This command adds a rule to the FORWARD chain, allowing packets that are related to an existing connection or belong to an established connection to be forwarded. It ensures that response traffic can be correctly routed back to the originating network namespace or bridge.
 
+
++Setting the route on the node to reach the network namespaces on the other node
+sudo ip route add $TO_BRIDGE_SUBNET via $TO_NODE_IP dev eth0
 ```
 
 ## cleanup
