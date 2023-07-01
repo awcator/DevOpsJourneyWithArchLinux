@@ -147,5 +147,6 @@ sudo ip netns delete $NS1
 sudo ip netns delete $NS2
 sudo ip link set $bridge_name down
 sudo brctl delbr $bridge_name
-
 ```
+delete the NAT rules from:
+read: https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/networking/iptables.md#see-all-the-rules-defined-from-all-the-tabels
