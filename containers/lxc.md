@@ -130,4 +130,12 @@ cat /var/lib/lxc/awcatorNodesArch/config
 ```
 sudo lxc-ls
 sudo lxc-destroy ubuntu-16
+systemctl stop lxc lxd
+pacman -Rnc lxc lxd lxcfs
+sudo \rm -vrf /var/lib/lxd/
+sudo umount /var/lib/lxcfs
+sudo umount /var/lib/lxd/devlxd
+sudo umount /var/lib/lxd/shmounts
+sudo ip link set lxdbr0 down
+sudo brctl delbr lxdbr0
 ```
