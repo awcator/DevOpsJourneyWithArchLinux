@@ -100,6 +100,8 @@ lxc info --show-log local:casual-lioness
 ```
 # Settingup LXC network (The hardway)
 Host bridge network read : https://wiki.archlinux.org/title/Network_bridge
+https://blog.simos.info/how-to-run-lxd-containers-in-wsl2/
+
 ```
   $ cat ~/.config/lxc/default.conf 
 lxc.net.0.type = veth
