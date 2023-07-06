@@ -6,7 +6,7 @@ export number_of_master=2
 export hostmachine_iface="eth0"
 export hostmachine_to_k8s_network_bridge="br0"
 export bridge_netmask_bits=24
-export bridge_subnet=10.1.0.0/$bridge_netmask_bits
+export bridge_subnet=172.16.0.0/$bridge_netmask_bits
 export lxc_storage_name="awcator-k8s-storage"
 export lxc_storage_type="dir"
 export lxc_k8s_profile="k8s-profile"
@@ -14,12 +14,7 @@ export lxc_k8s_profile="k8s-profile"
 
 IFS='.' read -ra octets <<< "$bridge_subnet"
 octets[3]=$((octets[3]+1))
-bridge_starting_ip="${octets[0]}.${octets[1]}.${octets[2]}.${octets[3]}" #10.1.0.1
-
-IFS='.' read -r -a octets <<< "$bridge_starting_ip"
-third_octet="${octets[2]}"
-((third_octet++))
-internal_network_ip="${octets[0]}.${octets[1]}.${third_octet}.${octets[3]}"  # 10.1.1.1  #changed third octate
+bridge_starting_ip="${octets[0]}.${octets[1]}.${octets[2]}.${octets[3]}" #172.16.0.1
 
 pacman -S lxc lxd
 sudo systemctl start lxc
