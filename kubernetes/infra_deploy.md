@@ -103,6 +103,7 @@ done
 # Destroy
 ```
 lxc storage delete $lxc_storage_name
+lxc profile delete $lxc_k8s_profile
 echo "normal";
 sudo iptables -F;
 sudo iptables -X;
