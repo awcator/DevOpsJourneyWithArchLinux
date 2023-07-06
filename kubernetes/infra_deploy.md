@@ -76,6 +76,27 @@ devices:
     type: disk
 EOF
 
+-# for WSL
+cat <<EOF |tee $lxc_k8s_profile.yaml
+config:
+  limits.memory.swap: "false"
+  boot.autostart: "false"
+  raw.lxc: |
+    lxc.apparmor.profile=unconfined
+    lxc.mount.auto=proc:rw sys:rw cgroup:rw
+    lxc.cgroup.devices.allow=a
+    lxc.cap.drop=
+  security.nesting: "true"
+  security.privileged: "true"
+description: "Awcator kubernetes nodes"
+devices:
+  eth0:
+    name: eth0
+    nictype: bridged
+    parent: br0
+    type: nic
+EOF
+
 lxc profile create $lxc_k8s_profile
 cat $lxc_k8s_profile.yaml | lxc profile edit $lxc_k8s_profile
 lxc profile show $lxc_k8s_profile
@@ -98,6 +119,30 @@ for ((i=1; i<=number_of_master; i++))
 do
   lxc launch images:ubuntu/18.04/amd64 controller-${i} -p $lxc_k8s_profile -s $lxc_storage_name
 done
+#Launch Instances-workernodes
+for ((i=1; i<=number_of_workers; i++))
+do
+  lxc launch images:ubuntu/18.04/amd64 worker-${i} -p $lxc_k8s_profile -s $lxc_storage_name
+done
+#Launch loadbalancer
+lxc launch images:ubuntu/18.04/amd64 haproxy -p $lxc_k8s_profile -s $lxc_storage_name
+lxc list
+
+
+# setup networking for launched instances
+cat <<EOF |tee 10-lxc.yaml
+network:
+  version: 2
+  ethernets:
+    eth0:
+       dhcp4: no
+       addresses: [10.0.1.100/24]
+       gateway4: 10.0.1.1
+       nameservers:
+         addresses: [8.8.8.8,8.8.4.4]
+EOF
+sudo lxc file push 10-lxc.yaml haproxy/etc/netplan/
+lxc exec haproxy -- sudo netplan apply
 ```
 
 # Destroy
