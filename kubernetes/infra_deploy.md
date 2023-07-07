@@ -736,7 +736,7 @@ done
 
 #Configure the Kubernetes Scheduler
 cat <<EOF | tee kube-scheduler.yaml
-apiVersion: kubescheduler.config.k8s.io/v1alpha1
+apiVersion: kubescheduler.config.k8s.io/v1beta1
 kind: KubeSchedulerConfiguration
 clientConnection:
   kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
@@ -780,6 +780,7 @@ for i in $(seq 1 "$number_of_master"); do
   lxc exec ${instance} -- systemctl status kube-apiserver kube-controller-manager kube-scheduler
 done
 
+-#modify adminkubeconfig server address to haproxyip isned of 127.0.0.1 (172.16.0.2)
 kubectl get componentstatuses --kubeconfig admin.kubeconfig
 
 ```
