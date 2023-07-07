@@ -616,6 +616,172 @@ done
 lxc exec haproxy -- cat /etc/haproxy/haproxy.cfg
 lxc exec haproxy -- sudo service haproxy restart
 lxc exec haproxy -- sudo service haproxy status
+
+
+# masternodes
+wget -q --show-progress --https-only --timestamping "https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-apiserver" \
+"https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-controller-manager" \
+"https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-scheduler" \
+"https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kubectl" 
+chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl
+
+for i in $(seq 1 "$number_of_master"); do
+    instance=controller-${i}
+# Create the Kubernetes configuration directory:
+    lxc exec ${instance} -- mkdir -p /etc/kubernetes/config
+# Install the Kubernetes binaries:
+    lxc file push kube-apiserver ${instance}/usr/local/bin/
+    lxc file push kube-controller-manager ${instance}/usr/local/bin/
+    lxc file push kube-scheduler ${instance}/usr/local/bin/
+    lxc file push kubectl ${instance}/usr/local/bin/
+# Configure the Kubernetes API Server
+  lxc exec ${instance} -- mkdir -p /var/lib/kubernetes/
+  lxc file push ca.pem ${instance}/var/lib/kubernetes/
+  lxc file push ca-key.pem ${instance}/var/lib/kubernetes/
+  lxc file push kubernetes-key.pem ${instance}/var/lib/kubernetes/
+  lxc file push kubernetes.pem ${instance}/var/lib/kubernetes/
+  lxc file push service-account-key.pem ${instance}/var/lib/kubernetes/
+  lxc file push service-account.pem ${instance}/var/lib/kubernetes/
+  lxc file push encryption-config.yaml ${instance}/var/lib/kubernetes/
+done
+
+KUBERNETES_PUBLIC_ADDRESS=$haproxy_ip
+etcd_servers_list=""   #https://172.16.0.3:2379,https://172.16.0.4:2379
+for x in `lxc ls|\grep controller|awk {'print $6'}`; 
+do 
+	etcd_servers_list="${etcd_servers_list}https://$x:2379," ; 
+done
+etcd_servers_list=`echo $etcd_servers_list|sed 's/.$//'`
+echo $etcd_servers_list
+for i in $(seq 1 "$number_of_master"); do
+INTERNAL_IP=$(lxc ls |\grep controller-${i}|awk {'print $6'})
+cat <<EOF | tee kube-apiserver.service
+[Unit]
+Description=Kubernetes API Server
+Documentation=https://github.com/kubernetes/kubernetes
+[Service]
+ExecStart=/usr/local/bin/kube-apiserver \\
+  --advertise-address=${INTERNAL_IP} \\
+  --allow-privileged=true \\
+  --apiserver-count=${number_of_master} \\
+  --audit-log-maxage=30 \\
+  --audit-log-maxbackup=3 \\
+  --audit-log-maxsize=100 \\
+  --audit-log-path=/var/log/audit.log \\
+  --authorization-mode=Node,RBAC \\
+  --bind-address=0.0.0.0 \\
+  --client-ca-file=/var/lib/kubernetes/ca.pem \\
+  --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \\
+  --enable-swagger-ui=true \\
+  --etcd-cafile=/var/lib/kubernetes/ca.pem \\
+  --etcd-certfile=/var/lib/kubernetes/kubernetes.pem \\
+  --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem \\
+  --etcd-servers=${etcd_servers_list} \\
+  --event-ttl=1h \\
+  --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml \\
+  --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\
+  --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
+  --kubelet-client-key=/var/lib/kubernetes/kubernetes-key.pem \\
+  --runtime-config api/all=true \\
+  --service-account-key-file=/var/lib/kubernetes/service-account.pem \\
+  --service-cluster-ip-range=10.32.0.0/24 \\
+  --service-node-port-range=30000-32767 \\
+  --tls-cert-file=/var/lib/kubernetes/kubernetes.pem \\
+  --tls-private-key-file=/var/lib/kubernetes/kubernetes-key.pem \\
+  --service-account-key-file=/var/lib/kubernetes/service-account.pem \\
+  --service-account-signing-key-file=/var/lib/kubernetes/service-account-key.pem \\
+  --service-account-issuer=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \\
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+lxc file push kube-apiserver.service controller-${i}/etc/systemd/system/
+done;
+
+# Configure the Kubernetes Controller Manager
+cat <<EOF | tee kube-controller-manager.service
+[Unit]
+Description=Kubernetes Controller Manager
+Documentation=https://github.com/kubernetes/kubernetes
+
+[Service]
+ExecStart=/usr/local/bin/kube-controller-manager \\
+  --address=0.0.0.0 \\
+  --cluster-cidr=10.200.0.0/16 \\
+  --cluster-name=kubernetes \\
+  --cluster-signing-cert-file=/var/lib/kubernetes/ca.pem \\
+  --cluster-signing-key-file=/var/lib/kubernetes/ca-key.pem \\
+  --kubeconfig=/var/lib/kubernetes/kube-controller-manager.kubeconfig \\
+  --leader-elect=true \\
+  --root-ca-file=/var/lib/kubernetes/ca.pem \\
+  --service-account-private-key-file=/var/lib/kubernetes/service-account-key.pem \\
+  --service-cluster-ip-range=10.32.0.0/24 \\
+  --use-service-account-credentials=true \\
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+for i in $(seq 1 "$number_of_master"); do
+  instance=controller-${i}
+  lxc file push kube-controller-manager.kubeconfig ${instance}/var/lib/kubernetes/
+  lxc file push kube-controller-manager.service ${instance}/etc/systemd/system/
+done
+
+#Configure the Kubernetes Scheduler
+cat <<EOF | tee kube-scheduler.yaml
+apiVersion: kubescheduler.config.k8s.io/v1alpha1
+kind: KubeSchedulerConfiguration
+clientConnection:
+  kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
+leaderElection:
+  leaderElect: true
+EOF
+
+cat <<EOF | tee kube-scheduler.service
+[Unit]
+Description=Kubernetes Scheduler
+Documentation=https://github.com/kubernetes/kubernetes
+
+[Service]
+ExecStart=/usr/local/bin/kube-scheduler \\
+  --config=/etc/kubernetes/config/kube-scheduler.yaml \\
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+for i in $(seq 1 "$number_of_master"); do
+  instance=controller-${i}
+  lxc file push kube-scheduler.kubeconfig ${instance}/var/lib/kubernetes/
+  lxc file push kube-scheduler.service ${instance}/etc/systemd/system/
+  lxc file push kube-scheduler.yaml ${instance}/etc/kubernetes/config/
+done
+
+# start control plane
+for i in $(seq 1 "$number_of_master"); do
+  instance=controller-${i}
+  lxc exec ${instance} -- systemctl daemon-reload
+  lxc exec ${instance} -- systemctl enable kube-apiserver kube-controller-manager kube-scheduler
+  lxc exec ${instance} -- systemctl start kube-apiserver kube-controller-manager kube-scheduler
+done
+sleep 10
+for i in $(seq 1 "$number_of_master"); do
+  instance=controller-${i}
+  lxc exec ${instance} -- systemctl status kube-apiserver kube-controller-manager kube-scheduler
+done
+
+kubectl get componentstatuses --kubeconfig admin.kubeconfig
+
 ```
 # Destroy
 ```
