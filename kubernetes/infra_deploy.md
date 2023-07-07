@@ -309,7 +309,7 @@ EOF
 EXTERNAL_IP=$haproxy_ip
 NODE_IP=$(lxc ls |\grep worker-${i}|awk {'print $6'})
 
-cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname=worker-${i},${EXTERNAL_IP},${NODE_IP} -profile=kubernetes worker-${i}-csr.json | cfssljson -bare worker-${i}
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname=worker-${i},${EXTERNAL_IP},${NODE_IP},${bridge_starting_ip} -profile=kubernetes worker-${i}-csr.json | cfssljson -bare worker-${i}
 done
 
 
@@ -402,7 +402,7 @@ cat > kubernetes-csr.json <<EOF
 }
 EOF
 list_of_masterips=`lxc ls|grep controller|awk {'print $6'}|tr '\n' ','|paste -sd ','`
-cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname=$list_of_masterips${KUBERNETES_PUBLIC_ADDRESS},127.0.0.1,kubernetes.default -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname=$list_of_masterips${KUBERNETES_PUBLIC_ADDRESS},${bridge_starting_ip},127.0.0.1,kubernetes.default -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes
 
 
 #service account
