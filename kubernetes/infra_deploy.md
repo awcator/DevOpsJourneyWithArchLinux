@@ -40,12 +40,14 @@ ip link show $hostmachine_to_k8s_network_bridge
 sudo ip addr add $bridge_starting_ip/$bridge_netmask_bits dev $hostmachine_to_k8s_network_bridge
 sudo sysctl net.ipv4.ip_forward=1
 
--#for wsl use legacy iptables 
+-#for wsl use legacy iptables
+sudo iptables-legacy -t nat -A POSTROUTING -o $hostmachine_iface  -j MASQUERADE
 sudo iptables-legacy -t nat -A POSTROUTING -s $bridge_subnet -o $hostmachine_to_k8s_network_bridge -j MASQUERADE
 sudo iptables-legacy -A FORWARD -i $hostmachine_to_k8s_network_bridge -o $hostmachine_iface -j ACCEPT
 sudo iptables-legacy -A FORWARD -i $hostmachine_iface -o $hostmachine_to_k8s_network_bridge -m state --state RELATED,ESTABLISHED -j ACCEPT
 sudo iptables-legacy -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 +#for linux hosts
+sudo iptables -t nat -A POSTROUTING -o $hostmachine_iface  -j MASQUERADE
 sudo iptables -t nat -A POSTROUTING -s $bridge_subnet -o $hostmachine_to_k8s_network_bridge -j MASQUERADE
 sudo iptables -A FORWARD -i $hostmachine_to_k8s_network_bridge -o $hostmachine_iface -j ACCEPT
 sudo iptables -A FORWARD -i $hostmachine_iface -o $hostmachine_to_k8s_network_bridge -m state --state RELATED,ESTABLISHED -j ACCEPT
