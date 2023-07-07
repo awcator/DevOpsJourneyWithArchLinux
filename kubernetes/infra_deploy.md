@@ -221,7 +221,402 @@ done
 +--------------+---------+-------------------+------+-----------+-----------+
 
 ```
+# PKI
+```
+# CA
+cat > ca-config.json <<EOF
+{
+  "signing": {
+    "default": {
+      "expiry": "8760h"
+    },
+    "profiles": {
+      "kubernetes": {
+        "usages": ["signing", "key encipherment", "server auth", "client auth"],
+        "expiry": "8760h"
+      }
+    }
+  }
+}
+EOF
 
+cat > ca-csr.json <<EOF
+{
+  "CN": "Kubernetes",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Portland",
+      "O": "Kubernetes",
+      "OU": "CA",
+      "ST": "Oregon"
+    }
+  ]
+}
+EOF
+
+cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+
+
+# Admin client certificate
+cat > admin-csr.json <<EOF
+{
+  "CN": "admin",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Plano",
+      "O": "system:masters",
+      "OU": "Kubernetes The Hard Way on LXD",
+      "ST": "Texas"
+    }
+  ]
+}
+EOF
+
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin
+
+#  Kubelet Client Certificates
+for i in $(seq 1 "$number_of_workers"); do
+cat > worker-${i}-csr.json <<EOF
+{
+  "CN": "system:node:worker-${i}",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Plano",
+      "O": "system:nodes",
+      "OU": "Kubernetes The Hard Way on LXD",
+      "ST": "Texas"
+    }
+  ]
+}
+EOF
+EXTERNAL_IP=$haproxy_ip
+NODE_IP=$(lxc ls |\grep worker-${i}|awk {'print $6'})
+
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname=worker-${i},${EXTERNAL_IP},${NODE_IP} -profile=kubernetes worker-${i}-csr.json | cfssljson -bare worker-${i}
+done
+
+
+# kube-controller-manager
+cat > kube-controller-manager-csr.json <<EOF
+{
+  "CN": "system:kube-controller-manager",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Plano",
+      "O": "system:kube-controller-manager",
+      "OU": "Kubernetes The Hard Way on LXD",
+      "ST": "Texas"
+    }
+  ]
+}
+EOF
+
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager
+
+
+#The Kube Proxy Client Certificate
+cat > kube-proxy-csr.json <<EOF
+{
+  "CN": "system:kube-proxy",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Plano",
+      "O": "system:node-proxier",
+      "OU": "Kubernetes The Hard Way on LXD",
+      "ST": "Texas"
+    }
+  ]
+}
+EOF
+
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-proxy-csr.json | cfssljson -bare kube-proxy
+
+
+# The Scheduler Client Certificate
+cat > kube-scheduler-csr.json <<EOF
+{
+  "CN": "system:kube-scheduler",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Plano",
+      "O": "system:kube-scheduler",
+      "OU": "Kubernetes The Hard Way on LXD",
+      "ST": "Texas"
+    }
+  ]
+}
+EOF
+
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler
+
+#The Kubernetes API Server Certificate
+KUBERNETES_PUBLIC_ADDRESS=$haproxy_ip
+cat > kubernetes-csr.json <<EOF
+{
+  "CN": "kubernetes",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Plano",
+      "O": "Kubernetes",
+      "OU": "Kubernetes The Hard Way on LXD",
+      "ST": "Texas"
+    }
+  ]
+}
+EOF
+list_of_masterips=`lxc ls|grep controller|awk {'print $6'}|tr '\n' ','|paste -sd ','`
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname=$list_of_masterips${KUBERNETES_PUBLIC_ADDRESS},127.0.0.1,kubernetes.default -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes
+
+
+#service account
+cat > service-account-csr.json <<EOF
+{
+  "CN": "service-accounts",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Plano",
+      "O": "Kubernetes",
+      "OU": "Kubernetes The Hard Way with LXD",
+      "ST": "Texas"
+    }
+  ]
+}
+EOF
+
+cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes service-account-csr.json | cfssljson -bare service-account
+
+#upload certs to nodes
+for i in $(seq 1 "$number_of_workers"); do
+  lxc file push ca.pem worker-${i}/home/ubuntu/
+  lxc file push worker-${i}-key.pem worker-${i}/home/ubuntu/
+  lxc file push worker-${i}.pem worker-${i}/home/ubuntu/
+  lxc exec worker-${i} ls /home/ubuntu/
+done
+
+for i in $(seq 1 "$number_of_master"); do
+  lxc file push ca.pem controller-${i}/home/ubuntu/
+  lxc file push ca-key.pem controller-${i}/home/ubuntu/
+  lxc file push kubernetes-key.pem controller-${i}/home/ubuntu/
+  lxc file push kubernetes.pem controller-${i}/home/ubuntu/
+  lxc file push service-account-key.pem controller-${i}/home/ubuntu/
+  lxc file push service-account.pem  controller-${i}/home/ubuntu/
+  lxc exec controller-${i} ls /home/ubuntu/
+done
+```
+# kube-configs
+```
+# The kubelet Kubernetes Configuration File
+KUBERNETES_PUBLIC_ADDRESS=$haproxy_ip
+for i in $(seq 1 "$number_of_workers"); do
+  instance=worker-${i}
+  kubectl config set-cluster kubernetes-the-hard-way --certificate-authority=ca.pem --embed-certs=true --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 --kubeconfig=${instance}.kubeconfig
+  kubectl config set-credentials system:node:${instance} --client-certificate=${instance}.pem --client-key=${instance}-key.pem --embed-certs=true --kubeconfig=${instance}.kubeconfig
+  kubectl config set-context default --cluster=kubernetes-the-hard-way --user=system:node:${instance} --kubeconfig=${instance}.kubeconfig
+  kubectl config use-context default --kubeconfig=${instance}.kubeconfig
+done
+
+#The kube-proxy Kubernetes Configuration File
+kubectl config set-cluster kubernetes-the-hard-way --certificate-authority=ca.pem --embed-certs=true --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 --kubeconfig=kube-proxy.kubeconfig
+kubectl config set-credentials system:kube-proxy --client-certificate=kube-proxy.pem --client-key=kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig
+kubectl config set-context default --cluster=kubernetes-the-hard-way --user=system:kube-proxy --kubeconfig=kube-proxy.kubeconfig
+kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
+
+#The kube-controller-manager Kubernetes Configuration File
+kubectl config set-cluster kubernetes-the-hard-way --certificate-authority=ca.pem --embed-certs=true --server=https://127.0.0.1:6443 --kubeconfig=kube-controller-manager.kubeconfig
+kubectl config set-credentials system:kube-controller-manager --client-certificate=kube-controller-manager.pem --client-key=kube-controller-manager-key.pem --embed-certs=true --kubeconfig=kube-controller-manager.kubeconfig
+kubectl config set-context default --cluster=kubernetes-the-hard-way --user=system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig
+kubectl config use-context default --kubeconfig=kube-controller-manager.kubeconfig
+
+# The kube-scheduler Kubernetes Configuration File
+kubectl config set-cluster kubernetes-the-hard-way --certificate-authority=ca.pem --embed-certs=true --server=https://127.0.0.1:6443 --kubeconfig=kube-scheduler.kubeconfig
+kubectl config set-credentials system:kube-scheduler --client-certificate=kube-scheduler.pem --client-key=kube-scheduler-key.pem --embed-certs=true --kubeconfig=kube-scheduler.kubeconfig
+kubectl config set-context default --cluster=kubernetes-the-hard-way --user=system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig
+kubectl config use-context default --kubeconfig=kube-scheduler.kubeconfig
+
+# The admin Kubernetes Configuration File
+kubectl config set-cluster kubernetes-the-hard-way --certificate-authority=ca.pem --embed-certs=true --server=https://127.0.0.1:6443 --kubeconfig=admin.kubeconfig
+kubectl config set-credentials admin --client-certificate=admin.pem --client-key=admin-key.pem --embed-certs=true --kubeconfig=admin.kubeconfig
+kubectl config set-context default --cluster=kubernetes-the-hard-way --user=admin --kubeconfig=admin.kubeconfig
+kubectl config use-context default --kubeconfig=admin.kubeconfig
+
+
+#upload
+for i in $(seq 1 "$number_of_workers"); do
+  instance=worker-${i}
+  lxc file push ${instance}.kubeconfig ${instance}/home/ubuntu/
+  lxc file push kube-proxy.kubeconfig ${instance}/home/ubuntu/
+  lxc exec  ${instance} -- ls /home/ubuntu/
+done
+
+for i in $(seq 1 "$number_of_master"); do
+  instance=controller-${i}
+  lxc file push admin.kubeconfig ${instance}/home/ubuntu/
+  lxc file push kube-controller-manager.kubeconfig ${instance}/home/ubuntu/
+  lxc file push kube-scheduler.kubeconfig ${instance}/home/ubuntu/
+  lxc exec  ${instance} -- ls /home/ubuntu/
+done
+```
+# Bootstrap nodes
+```
+# etcd
+ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+cat > encryption-config.yaml <<EOF
+kind: EncryptionConfig
+apiVersion: v1
+resources:
+  - resources:
+      - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: ${ENCRYPTION_KEY}
+      - identity: {}
+EOF
+
+for i in $(seq 1 "$number_of_master"); do
+  instance=controller-${i}
+  lxc file push encryption-config.yaml ${instance}/home/ubuntu/
+  lxc exec  ${instance} -- ls /home/ubuntu/
+done
+
+wget -q --show-progress --https-only --timestamping "https://github.com/etcd-io/etcd/releases/download/v3.4.15/etcd-v3.4.15-linux-amd64.tar.gz"
+for i in $(seq 1 "$number_of_master"); do
+  instance=controller-${i}
+  lxc file push etcd-v3.4.15-linux-amd64.tar.gz ${instance}/home/ubuntu/
+  lxc exec ${instance} -- tar -xvf /home/ubuntu/etcd-v3.4.15-linux-amd64.tar.gz -C /home/ubuntu/
+  lxc exec ${instance} -- mv /home/ubuntu/etcd-v3.4.15-linux-amd64/etcd /usr/local/bin/
+  lxc exec ${instance} -- mv /home/ubuntu/etcd-v3.4.15-linux-amd64/etcdctl /usr/local/bin/
+
+  lxc exec ${instance} -- mkdir -p /etc/etcd /var/lib/etcd
+  lxc exec ${instance} -- cp /home/ubuntu/ca.pem /etc/etcd/
+  lxc exec ${instance} -- cp /home/ubuntu/kubernetes-key.pem /etc/etcd/
+  lxc exec ${instance} -- cp /home/ubuntu/kubernetes.pem /etc/etcd/
+  lxc exec $instance -- ls  /etc/etcd/
+done
+
+
+etcd_servers_list="" 
+count=0
+for x in `lxc ls|\grep controller|awk {'print $6'}`; 
+do 
+	(( count++ )); 
+	etcd_servers_list="${etcd_servers_list}controller-$count=https://$x:2380," ; 
+done
+etcd_servers_list=`echo $etcd_servers_list|sed 's/.$//'`
+echo $etcd_servers_list
+
+for i in $(seq 1 "$number_of_master"); do
+NODE_IP=$(lxc ls |\grep controller-${i}|awk {'print $6'})
+ETCD_NAME=controller-${i}
+cat <<EOF | tee etcd.service
+[Unit]
+Description=etcd
+Documentation=https://github.com/coreos
+[Service]
+ExecStart=/usr/local/bin/etcd \\
+  --name ${ETCD_NAME} \\
+  --cert-file=/etc/etcd/kubernetes.pem \\
+  --key-file=/etc/etcd/kubernetes-key.pem \\
+  --peer-cert-file=/etc/etcd/kubernetes.pem \\
+  --peer-key-file=/etc/etcd/kubernetes-key.pem \\
+  --trusted-ca-file=/etc/etcd/ca.pem \\
+  --peer-trusted-ca-file=/etc/etcd/ca.pem \\
+  --peer-client-cert-auth \\
+  --client-cert-auth \\
+  --initial-advertise-peer-urls https://${NODE_IP}:2380 \\
+  --listen-peer-urls https://${NODE_IP}:2380 \\
+  --listen-client-urls https://${NODE_IP}:2379,https://127.0.0.1:2379 \\
+  --advertise-client-urls https://${NODE_IP}:2379 \\
+  --initial-cluster-token etcd-cluster-0 \\
+  --initial-cluster ${etcd_servers_list} \\
+  --initial-cluster-state new \\
+  --data-dir=/var/lib/etcd
+Restart=on-failure
+RestartSec=5
+[Install]
+WantedBy=multi-user.target
+EOF
+
+lxc file push etcd.service ${ETCD_NAME}/etc/systemd/system/
+lxc exec ${ETCD_NAME} -- systemctl daemon-reload
+lxc exec ${ETCD_NAME} -- systemctl enable etcd
+lxc exec ${ETCD_NAME} -- systemctl start etcd
+lxc exec ${ETCD_NAME} -- systemctl status etcd
+done
+
+# Etcd verification
+for i in $(seq 1 "$number_of_master"); do
+lxc exec controller-${i} -- bash -c "ETCDCTL_API=3 /usr/local/bin/etcdctl member list --endpoints=https://127.0.0.1:2379 --cacert=/etc/etcd/ca.pem --cert=/etc/etcd/kubernetes.pem --key=/etc/etcd/kubernetes-key.pem"
+done
+
+# haproxy node
+lxc exec haproxy -- apt-get update
+lxc exec haproxy -- apt-get install -y haproxy
+
+lxc exec haproxy -- sudo tee -a /etc/haproxy/haproxy.cfg << END
+frontend haproxynode
+    bind *:6443
+    mode tcp
+    option tcplog
+    default_backend backendnodes
+backend backendnodes
+    mode tcp    
+    option tcp-check
+    balance roundrobin
+    default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+END
+for ((i=1; i<=number_of_master; i++))
+do
+EXTERNAL_IP=$(lxc ls |\grep controller-${i}|awk {'print $6'})
+lxc exec haproxy -- sudo tee -a /etc/haproxy/haproxy.cfg << END
+    server node${i} ${EXTERNAL_IP}:6443 check
+END
+done
+lxc exec haproxy -- cat /etc/haproxy/haproxy.cfg
+lxc exec haproxy -- sudo service haproxy restart
+lxc exec haproxy -- sudo service haproxy status
+```
 # Destroy
 ```
 for i in $(seq 1 "$number_of_workers"); do
