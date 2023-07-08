@@ -186,7 +186,7 @@ network:
         gateway4: $bridge_starting_ip
         routes:
           - to: 10.200.${i}.0/24
-          - via: $curent_master_ip
+            via: $curent_master_ip
         nameservers:
           addresses: [$bridge_starting_ip,8.8.8.8,8.8.4.4]
 EOF
