@@ -166,7 +166,7 @@ network:
 EOF
 sudo lxc file push 10-lxc.yaml haproxy/etc/netplan/
 lxc exec haproxy -- sudo netplan apply
-lxc exec controller-${i} -- hostnamectl set-hostname haproxy
+lxc exec haproxy -- hostnamectl set-hostname haproxy
 lxc exec haproxy -- ping 8.8.8.8 -c 2 #should work
 
 
