@@ -902,7 +902,7 @@ wget -q --show-progress --https-only --timestamping \
 
 # CNI setup
 for instance in $(seq 1 "$number_of_workers"); do
-POD_CIDR=10.1.1${instance}.0/24
+POD_CIDR=10.1.${instance}.0/24
 cat <<EOF | tee 10-bridge.conf
 {
     "cniVersion": "0.4.0",
