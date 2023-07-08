@@ -424,7 +424,7 @@ cat > kubernetes-csr.json <<EOF
   ]
 }
 EOF
-list_of_masterips=`lxc ls|grep controller|awk {'print $6'}|tr '\n' ','|paste -sd ','`
+list_of_masterips=`lxc ls|\grep controller|awk {'print $6'}|tr '\n' ','|paste -sd ','`
 cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -hostname=$list_of_masterips${KUBERNETES_PUBLIC_ADDRESS},${bridge_starting_ip},127.0.0.1,kubernetes.default -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes
 
 
