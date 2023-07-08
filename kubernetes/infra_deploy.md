@@ -1295,6 +1295,35 @@ kubectl get pods -l run=busybox
 POD_NAME=$(kubectl get pods -l run=busybox -o jsonpath="{.items[0].metadata.name}")
 kubectl exec -ti $POD_NAME -- nslookup kubernetes
 
+#Data Encryption
+kubectl create secret generic kubernetes-the-hard-way   --from-literal="mykey=mydata"
+lxc exec controller-0 -- sudo ETCDCTL_API=3 etcdctl get \
+   --endpoints=https://127.0.0.1:2379 \
+   --cacert=/etc/etcd/ca.pem \
+   --cert=/etc/etcd/kubernetes.pem \
+   --key=/etc/etcd/kubernetes-key.pem\
+   /registry/secrets/default/kubernetes-the-hard-way | hexdump -C
+
+#Deployments
+kubectl run nginx --image=nginx
+kubectl get pods -l run=nginx
+POD_NAME=$(kubectl get pods -l run=nginx -o jsonpath="{.items[0].metadata.name}")
+#portforward
+kubectl port-forward $POD_NAME 8080:80
+curl --head http://127.0.0.1:8080
+#logs
+kubectl logs $POD_NAME
+#exec
+kubectl exec -ti $POD_NAME -- nginx -v
+#services
+kubectl expose pod nginx --port 80 --type NodePort
+NODE_PORT=$(kubectl get svc nginx    --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
+EXTERNAL_IP=NODE'sIP where pod running
+curl -I http://${EXTERNAL_IP}:${NODE_PORT}
+
+
+#storage
+check here
 ```
 # Destroy
 ```
