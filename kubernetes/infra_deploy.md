@@ -1107,4 +1107,5 @@ sudo iptables-legacy -t security -X;
 sudo iptables-legacy -t security -Z;
 sudo ip link set $hostmachine_to_k8s_network_bridge down
 sudo brctl delbr $hostmachine_to_k8s_network_bridge
+sudo \rm -rf /var/lib/lxc /var/lib/lxd /var/lib/lxcfs/
 ```
