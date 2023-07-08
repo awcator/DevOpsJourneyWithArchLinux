@@ -966,7 +966,7 @@ EOF
 
 #kubelet
 for instance in $(seq 1 "$number_of_workers"); do
-POD_CIDR=10.1.${instance}.0/16
+POD_CIDR=10.1.${instance}.0/24
 cat <<EOF | tee kubelet-config.yaml
 kind: KubeletConfiguration
 apiVersion: kubelet.config.k8s.io/v1beta1
