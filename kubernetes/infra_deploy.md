@@ -710,7 +710,6 @@ ExecStart=/usr/local/bin/kube-apiserver \\
   --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem \\
   --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem \\
   --kubelet-client-key=/var/lib/kubernetes/kubernetes-key.pem \\
-  --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname \\
   --runtime-config api/all=true \\
   --service-account-key-file=/var/lib/kubernetes/service-account.pem \\
   --service-cluster-ip-range=10.32.0.0/24 \\
@@ -728,6 +727,8 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
+# --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname 
+# if you prefer IP over DNS
 lxc file push kube-apiserver.service controller-${i}/etc/systemd/system/
 done;
 
