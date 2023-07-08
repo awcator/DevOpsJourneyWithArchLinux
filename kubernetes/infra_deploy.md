@@ -4,9 +4,9 @@ Hostmachine: 8GB RAM, 4CPU
 pacman -S lxc lxd
 sudo systemctl start lxd
 
-export number_of_workers=3
-export number_of_master=2
-export hostmachine_iface="eth0"
+export number_of_workers=1
+export number_of_master=1
+export hostmachine_iface="enp0s20u1"
 export hostmachine_to_k8s_network_bridge="br0"
 export bridge_netmask_bits=24
 export bridge_subnet=172.16.0.0/$bridge_netmask_bits
@@ -24,6 +24,11 @@ haproxy_ip="${octets[0]}.${octets[1]}.${octets[2]}.${octets[3]}" #172.16.0.2
 
 
 sudo swapoff -a
+sudo sysctl -w net.netfilter.nf_conntrack_max=131072
+sudo sysctl -w kernel/panic=10   #reset to 0
+sudo sysctl -w kernel/panic_on_oops=1 #reset to 0
+# sudo mkdir /sys/fs/cgroup/systemd
+# sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
 mkdir ~/k8ssetup
 cd ~/k8ssetup
 ```
@@ -67,6 +72,11 @@ config:
     lxc.mount.auto=proc:rw sys:rw cgroup:rw
     lxc.cgroup.devices.allow=a
     lxc.cap.drop=
+    lxc.cgroup.devices.allow=a
+    lxc.cgroup.devices.deny=c 5:1 rwm
+    lxc.cgroup.devices.deny=c 5:0 rwm
+    lxc.cgroup.devices.deny=c 1:9 rwm
+    lxc.cgroup.devices.deny=c 1:8 rwm
   security.nesting: "true"
   security.privileged: "true"
 description: "Awcator kubernetes nodes"
@@ -84,6 +94,9 @@ devices:
     path: /sys/module/apparmor/parameters/enabled
     source: /dev/null
     type: disk
+  kmsg:
+    path: /dev/kmsg
+    type: unix-char
 EOF
 
 -# for WSL
@@ -137,7 +150,7 @@ done
 #Launch loadbalancer
 lxc launch images:ubuntu/18.04/amd64 haproxy -p $lxc_k8s_profile -s $lxc_storage_name
 lxc list
-
+sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 
 # setup networking for launched instances (Haproxy )
 cat <<EOF |tee 10-lxc.yaml
@@ -145,14 +158,15 @@ network:
   version: 2
   ethernets:
     eth0:
-       dhcp4: no
-       addresses: [$haproxy_ip/$bridge_netmask_bits]
-       gateway4: $bridge_starting_ip
-       nameservers:
-         addresses: [$bridge_starting_ip,8.8.8.8,8.8.4.4]
+        dhcp4: no
+        addresses: [$haproxy_ip/$bridge_netmask_bits]
+        gateway4: $bridge_starting_ip
+        nameservers:
+          addresses: [$bridge_starting_ip,8.8.8.8,8.8.4.4]
 EOF
 sudo lxc file push 10-lxc.yaml haproxy/etc/netplan/
 lxc exec haproxy -- sudo netplan apply
+lxc exec controller-${i} -- hostnamectl set-hostname haproxy
 lxc exec haproxy -- ping 8.8.8.8 -c 2 #should work
 
 
@@ -167,14 +181,15 @@ network:
   version: 2
   ethernets:
     eth0:
-       dhcp4: no
-       addresses: [$curent_master_ip/$bridge_netmask_bits]
-       gateway4: $bridge_starting_ip
-       nameservers:
-         addresses: [$bridge_starting_ip,8.8.8.8,8.8.4.4]
+        dhcp4: no
+        addresses: [$curent_master_ip/$bridge_netmask_bits]
+        gateway4: $bridge_starting_ip
+        nameservers:
+          addresses: [$bridge_starting_ip,8.8.8.8,8.8.4.4]
 EOF
 lxc file push 10-lxc.yaml controller-${i}/etc/netplan/
 lxc exec controller-${i} -- sudo netplan apply
+lxc exec controller-${i} -- hostnamectl set-hostname  controller-${i}
 lxc exec controller-${i} -- ping 8.8.8.8 -c 2 #should work
 done
 
@@ -194,17 +209,22 @@ network:
   version: 2
   ethernets:
     eth0:
-       dhcp4: no
-       addresses: [$curent_worker_ip/$bridge_netmask_bits]
-       gateway4: $bridge_starting_ip
-       nameservers:
-         addresses: [$bridge_starting_ip,8.8.8.8,8.8.4.4]
+        dhcp4: no
+        addresses: [$curent_worker_ip/$bridge_netmask_bits]
+        routes:
+          - to: 10.200.${i}.0/24
+            via: $curent_worker_ip
+        gateway4: $bridge_starting_ip
+        nameservers:
+          addresses: [$bridge_starting_ip,8.8.8.8,8.8.4.4]
 EOF
 lxc file push 10-lxc.yaml worker-${i}/etc/netplan/
 lxc exec worker-${i} -- sudo netplan apply
+lxc exec worker-${i} -- hostnamectl set-hostname  worker-${i}
 lxc exec worker-${i} -- ping 8.8.8.8 -c 2 #should work
 done
-
+sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
+lxc restart --all
  lxc ls
 +--------------+---------+-------------------+------+-----------+-----------+
 |     NAME     |  STATE  |       IPV4        | IPV6 |   TYPE    | SNAPSHOTS |
@@ -497,6 +517,7 @@ for i in $(seq 1 "$number_of_master"); do
   lxc file push kube-scheduler.kubeconfig ${instance}/home/ubuntu/
   lxc exec  ${instance} -- ls /home/ubuntu/
 done
+sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 ```
 # Bootstrap nodes
 ```
@@ -585,13 +606,14 @@ lxc file push etcd.service ${ETCD_NAME}/etc/systemd/system/
 lxc exec ${ETCD_NAME} -- systemctl daemon-reload
 lxc exec ${ETCD_NAME} -- systemctl enable etcd
 lxc exec ${ETCD_NAME} -- systemctl start etcd
-lxc exec ${ETCD_NAME} -- systemctl status etcd
+lxc exec ${ETCD_NAME} -- systemctl --no-pager status etcd 
 done
-
+sleep 10
 # Etcd verification
 for i in $(seq 1 "$number_of_master"); do
 lxc exec controller-${i} -- bash -c "ETCDCTL_API=3 /usr/local/bin/etcdctl member list --endpoints=https://127.0.0.1:2379 --cacert=/etc/etcd/ca.pem --cert=/etc/etcd/kubernetes.pem --key=/etc/etcd/kubernetes-key.pem"
 done
+sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 
 # haproxy node
 lxc exec haproxy -- apt-get update
@@ -780,11 +802,13 @@ done
 sleep 10
 for i in $(seq 1 "$number_of_master"); do
   instance=controller-${i}
-  lxc exec ${instance} -- systemctl status kube-apiserver kube-controller-manager kube-scheduler
+  lxc exec ${instance} -- systemctl --no-pager status kube-apiserver kube-controller-manager kube-scheduler
 done
+sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 
 -#modify adminkubeconfig server address to haproxyip isned of 127.0.0.1 (172.16.0.2)
 kubectl get componentstatuses --kubeconfig admin.kubeconfig
+cp admin.kubeconfig ~/.kube/config
 kubectl get ns --kubeconfig admin.kubeconfig
 
 # RBAC for kublets
@@ -985,6 +1009,8 @@ ExecStart=/usr/local/bin/kubelet \\
   --network-plugin=cni \\
   --register-node=true \\
   --fail-swap-on=false \\
+  --eviction-hard='imagefs.available<1%,memory.available<1Mi,nodefs.available<1%,nodefs.inodesFree<1%' \\
+  --experimental-allocatable-ignore-eviction=true \\
   --v=2
 Restart=on-failure
 RestartSec=5
@@ -1045,6 +1071,18 @@ for i in $(seq 1 "$number_of_workers"); do
   lxc exec ${instance} -- systemctl enable containerd kubelet kube-proxy
   lxc exec ${instance} -- systemctl start containerd kubelet kube-proxy
 done
+sleep 10
+for i in $(seq 1 "$number_of_workers"); do
+  instance=worker-${i}
+  lxc exec ${instance} -- systemctl --no-pager status containerd kubelet kube-proxy
+done
+sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
+kubectl get nodes
+kubectl taint nodes <node-name> node.kubernetes.io/disk-pressure-
+
+#coreDNS setup
+kubectl apply -f  https://raw.githubusercontent.com/kelseyhightower/kubernetes-the-hard-way/master/deployments/coredns-1.7.0.yaml
+
 ```
 # Destroy
 ```
@@ -1061,6 +1099,9 @@ lxc delete haproxy --force
 lxc storage delete $lxc_storage_name
 lxc profile delete $lxc_k8s_profile
 sudo systemctl stop lxc lxd
+pacman -Rnc lxc lxd lxcfs
+sudo umount /var/lib/lxd/shmounts
+sudo umount /var/lib/lxd/devlxd
 echo "normal";
 sudo iptables -F;
 sudo iptables -X;
@@ -1109,3 +1150,7 @@ sudo ip link set $hostmachine_to_k8s_network_bridge down
 sudo brctl delbr $hostmachine_to_k8s_network_bridge
 sudo \rm -rf /var/lib/lxc /var/lib/lxd /var/lib/lxcfs/
 ```
+inspired from 
+https://github.com/rgmorales/kubernetes-the-hard-way-on-lxd
+and
+https://github.com/kelseyhightower/kubernetes-the-hard-way
