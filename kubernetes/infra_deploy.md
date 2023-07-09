@@ -936,6 +936,14 @@ lxc file push 10-bridge.conf worker-${instance}/etc/cni/net.d/
 done
 ip route
 
+#  $ ip route
+#default via 192.168.42.129 dev enp0s20u2 proto dhcp src 192.168.42.210 metric 100 
+#10.1.1.0/24 via 172.16.0.5 dev br0 
+#10.1.2.0/24 via 172.16.0.6 dev br0 
+#10.1.3.0/24 via 172.16.0.5 dev br0 
+#172.16.0.0/24 dev br0 proto kernel scope link src 172.16.0.1 
+#192.168.42.0/24 dev enp0s20u2 proto kernel scope link src 192.168.42.210 metric 100 
+
 cat <<EOF | tee 99-loopback.conf
 {
     "cniVersion": "0.4.0",
