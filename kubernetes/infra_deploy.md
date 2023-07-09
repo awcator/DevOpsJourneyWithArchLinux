@@ -910,6 +910,10 @@ wget -q --show-progress --https-only --timestamping \
 # CNI setup
 for instance in $(seq 1 "$number_of_workers"); do
 POD_CIDR=10.1.${instance}.0/24
+NODE_IP=$(lxc ls |\grep worker-${i}|awk {'print $6'})
+sudo ip route add $POD_CIDR via $NODE_IP dev $hostmachine_to_k8s_network_bridge 
+#  sudo ip route add 10.1.3.0/24 via 172.16.0.5 dev br0
+# sudo route add -net 10.1.2.0 netmask 255.255.255.0 gw 172.16.0.6
 cat <<EOF | tee 10-bridge.conf
 {
     "cniVersion": "0.4.0",
@@ -930,6 +934,8 @@ EOF
 
 lxc file push 10-bridge.conf worker-${instance}/etc/cni/net.d/
 done
+ip route
+
 cat <<EOF | tee 99-loopback.conf
 {
     "cniVersion": "0.4.0",
