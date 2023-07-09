@@ -4,9 +4,9 @@ Hostmachine: 8GB RAM, 4CPU
 pacman -S lxc lxd
 sudo systemctl start lxd
 
-export number_of_workers=1
-export number_of_master=1
-export hostmachine_iface="enp0s20u1"
+export number_of_workers=2
+export number_of_master=2
+export hostmachine_iface="enp0s20u2"
 export hostmachine_to_k8s_network_bridge="br0"
 export bridge_netmask_bits=24
 export bridge_subnet=172.16.0.0/$bridge_netmask_bits
@@ -84,7 +84,7 @@ devices:
   eth0:
     name: eth0
     nictype: bridged
-    parent: br0
+    parent: ${hostmachine_to_k8s_network_bridge}
     type: nic
   aadisable:
     path: /sys/module/nf_conntrack/parameters/hashsize
@@ -99,26 +99,6 @@ devices:
     type: unix-char
 EOF
 
--# for WSL
-cat <<EOF |tee $lxc_k8s_profile.yaml
-config:
-  limits.memory.swap: "false"
-  boot.autostart: "false"
-  raw.lxc: |
-    lxc.apparmor.profile=unconfined
-    lxc.mount.auto=proc:rw sys:rw cgroup:rw
-    lxc.cgroup.devices.allow=a
-    lxc.cap.drop=
-  security.nesting: "true"
-  security.privileged: "true"
-description: "Awcator kubernetes nodes"
-devices:
-  eth0:
-    name: eth0
-    nictype: bridged
-    parent: br0
-    type: nic
-EOF
 
 lxc profile create $lxc_k8s_profile
 cat $lxc_k8s_profile.yaml | lxc profile edit $lxc_k8s_profile
@@ -244,7 +224,33 @@ lxc restart --all
 +--------------+---------+-------------------+------+-----------+-----------+
 | worker-3     | RUNNING | 172.16.0.7 (eth0) |      | CONTAINER | 0         |
 +--------------+---------+-------------------+------+-----------+-----------+
-
+#upadte hosts file or running custom dnsserver (coredns/dnsmasq on hostmachine) add it in resolv.conf
+lxc_output=$(lxc ls|\grep RUNNING)
+hosts=""
+while IFS= read -r line; do
+    # Extract the hostname and IP address using awk
+    hostname=$(echo "$line" | awk '{print $2}')
+    ip=$(echo "$line" | awk '{print $6}')
+    # Append the hostname and IP address to the hosts variable
+    hosts+="\n$ip $hostname"
+done <<< "$lxc_output"
+hosts=$(echo "$hosts" | sed '/^$/d')
+echo -e "$hosts"
+hosts=$(echo "$hosts" | sed '/^$/d')
+hosts_file="/etc/hosts"
+echo "writings hosts to haproxy"
+lxc exec haproxy -- /bin/bash -c "echo -e '$hosts' | sudo tee -a '$hosts_file' "
+lxc exec haproxy -- /bin/bash -c "echo -e \"$hosts\" | awk '{print \$2}' | xargs -I{} ping -c 2 {}"
+echo "writings hosts to workers"
+for ((i=1; i<=number_of_workers; i++)) do
+  lxc exec worker-${i} -- /bin/bash -c "echo -e '$hosts' | sudo tee -a '$hosts_file' "
+  lxc exec worker-${i} -- /bin/bash -c "echo -e \"$hosts\" | awk '{print \$2}' | xargs -I{} ping -c 2 {}"
+done
+echo "writings hosts to master"
+for ((i=1; i<=number_of_master; i++)) do
+  lxc exec controller-${i} -- /bin/bash -c "echo -e '$hosts' | sudo tee -a '$hosts_file' "
+  lxc exec controller-${i} -- /bin/bash -c "echo -e \"$hosts\" | awk '{print \$2}' | xargs -I{} ping -c 2 {}"
+done
 ```
 # PKI
 ```
@@ -1089,6 +1095,19 @@ kubectl taint nodes <node-name> node.kubernetes.io/disk-pressure-
 ```
 #ADD ons
 ```
+-# archlinux wierd groupc probblem in worker nodes
+# from hostmachine (Arch):
+sudo mkdir /sys/fs/cgroup/systemd
+sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+# from LXC's worker nodes
+for i in $(seq 1 "$number_of_workers"); do
+  instance=worker-${i}
+  lxc exec $instance -- mkdir /sys/fs/cgroup/systemd
+  lxc exec $instance -- mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+done
+sudo umount /sys/fs/cgroup/systemd # if i dont unwont, lxc wont restart unless i unmount. dont know why
+# dont unmount inside lxc's. not sure why, it works
+
 cat <<EOF | tee coredns.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -1274,19 +1293,6 @@ EOF
 kubectl apply -f coredns-1.7.0.yaml
 sleep 20
 kubectl get pods -n kube-system
-
--# archlinux wierd groupc probblem in worker nodes
-# from hostmachine (Arch):
-mkdir /sys/fs/cgroup/systemd
-# from LXC's worker nodes
-mkdir /sys/fs/cgroup/systemd
-# from hostmachine
-mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
-# from LXC's worker nodes
-mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
-# from hostmachine:
-umount /sys/fs/cgroup/systemd
-# dont unmount in lxc. not sure why, it works
 ```
 # verifications & smoke tests
 ```
@@ -1339,7 +1345,7 @@ lxc delete haproxy --force
 \rm -rf ~/k8ssetup
 lxc storage delete $lxc_storage_name
 lxc profile delete $lxc_k8s_profile
-sudo systemctl stop lxc lxd
+sudo systemctl stop lxc lxd lxcfs
 pacman -Rnc lxc lxd lxcfs
 sudo umount /var/lib/lxd/shmounts
 sudo umount /var/lib/lxd/devlxd
