@@ -654,9 +654,9 @@ lxc exec haproxy -- sudo service haproxy status
 
 # masternodes
 wget -q --show-progress --https-only --timestamping "https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-apiserver" \
-"https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-controller-manager" \
-"https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-scheduler" \
-"https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kubectl" 
+"https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-controller-manager" \
+"https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-scheduler" \
+"https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl" 
 chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl
 
 for i in $(seq 1 "$number_of_master"); do
@@ -885,9 +885,9 @@ wget -q --show-progress --https-only --timestamping \
   https://github.com/opencontainers/runc/releases/download/v1.0.0-rc93/runc.amd64 \
   https://github.com/containernetworking/plugins/releases/download/v0.9.1/cni-plugins-linux-amd64-v0.9.1.tgz \
   https://github.com/containerd/containerd/releases/download/v1.4.4/containerd-1.4.4-linux-amd64.tar.gz \
-  https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kubectl \
-  https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-proxy \
-  https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kubelet
+  https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl \
+  https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-proxy \
+  https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubelet
 
   sudo mv runc.amd64 runc
   chmod +x kubectl kube-proxy kubelet runc 
