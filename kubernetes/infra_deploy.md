@@ -1350,7 +1350,7 @@ spec:
     port: 9153
     protocol: TCP
 EOF
-kubectl apply -f coredns
+kubectl apply -f coredns.yaml
 sleep 20
 kubectl get pods -n kube-system
 ```
