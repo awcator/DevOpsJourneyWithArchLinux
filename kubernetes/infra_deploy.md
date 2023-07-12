@@ -1389,8 +1389,9 @@ curl -I http://${NODE_IP}:${NODE_PORT}
 
 
 #storage
-check here
+check here https://github.com/awcator/DevOpsJourneyWithArchLinux/tree/master/kubernetes/storages
 ```
+[Read here for storage setup ](https://github.com/awcator/DevOpsJourneyWithArchLinux/tree/master/kubernetes/storages)
 # Destroy
 ```
 for i in $(seq 1 "$number_of_workers"); do
