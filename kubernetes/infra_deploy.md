@@ -1103,9 +1103,14 @@ for i in $(seq 1 "$number_of_workers"); do
 done
 sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 kubectl get nodes
-# if node is taineted
-kubectl taint nodes <node-name> node.kubernetes.io/disk-pressure-
 
+# wierd situation cert-manger pods were not able to reach clusterIP, beacuse master was not reachable to clusterIps
+# workaround 
+WORKER_NODE_IP=$(lxc ls |\grep worker-0|awk {'print $6'})
+sudo ip route add 10.32.0.0/24 via $WORKER_NODE_IP dev $hostmachine_to_k8s_network_bridge
+
+# if node is taineted
+# kubectl taint nodes <node-name> node.kubernetes.io/disk-pressure-
 ```
 #ADD ons
 ```
