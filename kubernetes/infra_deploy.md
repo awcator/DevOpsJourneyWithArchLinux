@@ -1147,7 +1147,7 @@ kubectl get nodes
 
 # wierd situation cert-manger pods were not able to reach clusterIP, beacuse master was not reachable to clusterIps
 # workaround 
-WORKER_NODE_IP=$(lxc ls |\grep worker-0|awk {'print $6'})
+WORKER_NODE_IP=$(lxc ls |\grep worker-1|awk {'print $6'})
 sudo ip route add 10.32.0.0/24 via $WORKER_NODE_IP dev $hostmachine_to_k8s_network_bridge
 
 # if node is taineted
@@ -1350,7 +1350,7 @@ spec:
     port: 9153
     protocol: TCP
 EOF
-kubectl apply -f coredns-1.7.0.yaml
+kubectl apply -f coredns
 sleep 20
 kubectl get pods -n kube-system
 ```
