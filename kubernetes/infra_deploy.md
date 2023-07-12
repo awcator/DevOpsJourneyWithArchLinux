@@ -1,4 +1,41 @@
 Hostmachine: 8GB RAM, 4CPU 
+# Kuberntes version
+```
+# Kubernetes 1.20.15
+# 
+export ETCD_VERSION=3.4.13
+export k8sv=1.20.15
+export KUBE_APISERVER_VERSION=$k8sv
+export KUBE_CONTROLLER_MANAGER_VERSION=$k8sv
+export KUBE_SCHEDULER_VERSION=$k8sv
+export KUBECTL_VERSION=$k8sv
+export CRICTL_VERSION=$k8sv
+export KUBE_PROXY_VERSION=$k8sv
+export KUBELET_VERSION=$k8sv
+export RUNC_VERSION=1.0.0-rc93
+export CNI_PLUGINS_VERSION=0.9.1
+export CONTAINERED_VERSION=1.4.4
+
+# Kubernetes 1.21.0  [VERIFIED]
+export ETCD_VERSION=3.4.15
+export KUBE_APISERVER_VERSION=1.21.0
+export KUBE_CONTROLLER_MANAGER_VERSION=1.21.0
+export KUBE_SCHEDULER_VERSION=1.21.0
+export KUBECTL_VERSION=1.21.0
+export CRICTL_VERSION=1.21.0
+export KUBE_PROXY_VERSION=1.21.0
+export KUBELET_VERSION=1.21.0
+export RUNC_VERSION=1.0.0-rc93
+export CNI_PLUGINS_VERSION=0.9.1
+export CONTAINERED_VERSION=1.4.4
+
+#Kubernetes 24.15 -->notworking to be fixed
+#export ETCD_VERSION=3.5.6
+#export KUBE_APISERVER_VERSION=1.24.5
+#export KUBE_CONTROLLER_MANAGER_VERSION=1.24.5
+#export KUBE_SCHEDULER_VERSION=1.24.5
+#export KUBECTL_VERSION=1.24.5
+```
 # Hostmachine setup
 ```
 pacman -S lxc lxd
@@ -104,7 +141,7 @@ lxc profile create $lxc_k8s_profile
 cat $lxc_k8s_profile.yaml | lxc profile edit $lxc_k8s_profile
 lxc profile show $lxc_k8s_profile
 
-$ lxd init
+#$ lxd init
 # Would you like to use LXD clustering? (yes/no) [default=no]: no
 # Do you want to configure a new storage pool? (yes/no) [default=yes]: no
 # Would you like to connect to a MAAS server? (yes/no) [default=no]: no
@@ -208,23 +245,25 @@ lxc exec worker-${i} -- ping 8.8.8.8 -c 2 #should work
 done
 sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 lxc restart --all
- lxc ls
-+--------------+---------+-------------------+------+-----------+-----------+
-|     NAME     |  STATE  |       IPV4        | IPV6 |   TYPE    | SNAPSHOTS |
-+--------------+---------+-------------------+------+-----------+-----------+
-| controller-1 | RUNNING | 172.16.0.3 (eth0) |      | CONTAINER | 0         |
-+--------------+---------+-------------------+------+-----------+-----------+
-| controller-2 | RUNNING | 172.16.0.4 (eth0) |      | CONTAINER | 0         |
-+--------------+---------+-------------------+------+-----------+-----------+
-| haproxy      | RUNNING | 172.16.0.2 (eth0) |      | CONTAINER | 0         |
-+--------------+---------+-------------------+------+-----------+-----------+
-| worker-1     | RUNNING | 172.16.0.5 (eth0) |      | CONTAINER | 0         |
-+--------------+---------+-------------------+------+-----------+-----------+
-| worker-2     | RUNNING | 172.16.0.6 (eth0) |      | CONTAINER | 0         |
-+--------------+---------+-------------------+------+-----------+-----------+
-| worker-3     | RUNNING | 172.16.0.7 (eth0) |      | CONTAINER | 0         |
-+--------------+---------+-------------------+------+-----------+-----------+
-#upadte hosts file or running custom dnsserver (coredns/dnsmasq on hostmachine) add it in resolv.conf
+sleep 20
+lxc ls
+#+--------------+---------+-------------------+------+-----------+-----------+
+#|     NAME     |  STATE  |       IPV4        | IPV6 |   TYPE    | SNAPSHOTS |
+#+--------------+---------+-------------------+------+-----------+-----------+
+#| controller-1 | RUNNING | 172.16.0.3 (eth0) |      | CONTAINER | 0         |
+#+--------------+---------+-------------------+------+-----------+-----------+
+#| controller-2 | RUNNING | 172.16.0.4 (eth0) |      | CONTAINER | 0         |
+#+--------------+---------+-------------------+------+-----------+-----------+
+#| haproxy      | RUNNING | 172.16.0.2 (eth0) |      | CONTAINER | 0         |
+#+--------------+---------+-------------------+------+-----------+-----------+
+#| worker-1     | RUNNING | 172.16.0.5 (eth0) |      | CONTAINER | 0         |
+#+--------------+---------+-------------------+------+-----------+-----------+
+#| worker-2     | RUNNING | 172.16.0.6 (eth0) |      | CONTAINER | 0         |
+#+--------------+---------+-------------------+------+-----------+-----------+
+#| worker-3     | RUNNING | 172.16.0.7 (eth0) |      | CONTAINER | 0         |
+#+--------------+---------+-------------------+------+-----------+-----------+
+
+# upadte hosts file or run dnsserver (coredns/dnsmasq on hostmachine) add it in /etc/resolv.conf
 lxc_output=$(lxc ls|\grep RUNNING)
 hosts=""
 while IFS= read -r line; do
@@ -553,13 +592,13 @@ for i in $(seq 1 "$number_of_master"); do
   lxc exec  ${instance} -- ls /home/ubuntu/
 done
 
-wget -q --show-progress --https-only --timestamping "https://github.com/etcd-io/etcd/releases/download/v3.4.15/etcd-v3.4.15-linux-amd64.tar.gz"
+wget -q --show-progress --https-only --timestamping "https://github.com/etcd-io/etcd/releases/download/v$ETCD_VERSION/etcd-v$ETCD_VERSION-linux-amd64.tar.gz"
 for i in $(seq 1 "$number_of_master"); do
   instance=controller-${i}
-  lxc file push etcd-v3.4.15-linux-amd64.tar.gz ${instance}/home/ubuntu/
-  lxc exec ${instance} -- tar -xvf /home/ubuntu/etcd-v3.4.15-linux-amd64.tar.gz -C /home/ubuntu/
-  lxc exec ${instance} -- mv /home/ubuntu/etcd-v3.4.15-linux-amd64/etcd /usr/local/bin/
-  lxc exec ${instance} -- mv /home/ubuntu/etcd-v3.4.15-linux-amd64/etcdctl /usr/local/bin/
+  lxc file push etcd-v$ETCD_VERSION-linux-amd64.tar.gz ${instance}/home/ubuntu/
+  lxc exec ${instance} -- tar -xvf /home/ubuntu/etcd-v$ETCD_VERSION-linux-amd64.tar.gz -C /home/ubuntu/
+  lxc exec ${instance} -- mv /home/ubuntu/etcd-v$ETCD_VERSION-linux-amd64/etcd /usr/local/bin/
+  lxc exec ${instance} -- mv /home/ubuntu/etcd-v$ETCD_VERSION-linux-amd64/etcdctl /usr/local/bin/
 
   lxc exec ${instance} -- mkdir -p /etc/etcd /var/lib/etcd
   lxc exec ${instance} -- cp /home/ubuntu/ca.pem /etc/etcd/
@@ -653,10 +692,10 @@ lxc exec haproxy -- sudo service haproxy status
 
 
 # masternodes
-wget -q --show-progress --https-only --timestamping "https://storage.googleapis.com/kubernetes-release/release/v1.22.3/bin/linux/amd64/kube-apiserver" \
-"https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-controller-manager" \
-"https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-scheduler" \
-"https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl" 
+wget -q --show-progress --https-only --timestamping "https://storage.googleapis.com/kubernetes-release/release/v$KUBE_APISERVER_VERSION/bin/linux/amd64/kube-apiserver" \
+"https://storage.googleapis.com/kubernetes-release/release/v$KUBE_CONTROLLER_MANAGER_VERSION/bin/linux/amd64/kube-controller-manager" \
+"https://storage.googleapis.com/kubernetes-release/release/v$KUBE_SCHEDULER_VERSION/bin/linux/amd64/kube-scheduler" \
+"https://storage.googleapis.com/kubernetes-release/release/v$KUBECTL_VERSION/bin/linux/amd64/kubectl" 
 chmod +x kube-apiserver kube-controller-manager kube-scheduler kubectl
 
 for i in $(seq 1 "$number_of_master"); do
@@ -818,6 +857,8 @@ done
 sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 
 -#modify adminkubeconfig server address to haproxyip isned of 127.0.0.1 (172.16.0.2)
+cat admin.kubeconfig |sed "s/127.0.0.1/$haproxy_ip/" > /tmp/out
+cp /tmp/out admin.kubeconfig
 kubectl get componentstatuses --kubeconfig admin.kubeconfig
 cp admin.kubeconfig ~/.kube/config
 kubectl get ns --kubeconfig admin.kubeconfig
@@ -881,13 +922,13 @@ for i in $(seq 1 "$number_of_workers"); do
   lxc exec ${instance} -- mkdir -p /etc/containerd/
 done
 wget -q --show-progress --https-only --timestamping \
-  https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.21.0/crictl-v1.21.0-linux-amd64.tar.gz \
-  https://github.com/opencontainers/runc/releases/download/v1.0.0-rc93/runc.amd64 \
-  https://github.com/containernetworking/plugins/releases/download/v0.9.1/cni-plugins-linux-amd64-v0.9.1.tgz \
-  https://github.com/containerd/containerd/releases/download/v1.4.4/containerd-1.4.4-linux-amd64.tar.gz \
-  https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubectl \
-  https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kube-proxy \
-  https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/linux/amd64/kubelet
+  https://github.com/kubernetes-sigs/cri-tools/releases/download/v$CRICTL_VERSION/crictl-v$CRICTL_VERSION-linux-amd64.tar.gz \
+  https://github.com/opencontainers/runc/releases/download/v$RUNC_VERSION/runc.amd64 \
+  https://github.com/containernetworking/plugins/releases/download/v$CNI_PLUGINS_VERSION/cni-plugins-linux-amd64-v$CNI_PLUGINS_VERSION.tgz \
+  https://github.com/containerd/containerd/releases/download/v$CONTAINERED_VERSION/containerd-$CONTAINERED_VERSION-linux-amd64.tar.gz \
+  https://storage.googleapis.com/kubernetes-release/release/v$KUBECTL_VERSION/bin/linux/amd64/kubectl \
+  https://storage.googleapis.com/kubernetes-release/release/v$KUBE_PROXY_VERSION/bin/linux/amd64/kube-proxy \
+  https://storage.googleapis.com/kubernetes-release/release/v$KUBELET_VERSION/bin/linux/amd64/kubelet
 
   sudo mv runc.amd64 runc
   chmod +x kubectl kube-proxy kubelet runc 
@@ -898,13 +939,13 @@ wget -q --show-progress --https-only --timestamping \
     lxc file push kubelet ${instance}/usr/local/bin/
     lxc file push runc ${instance}/usr/local/bin/
 
-    lxc file push crictl-v1.21.0-linux-amd64.tar.gz ${instance}/home/ubuntu/
-    lxc file push cni-plugins-linux-amd64-v0.9.1.tgz ${instance}/home/ubuntu/
-    lxc file push containerd-1.4.4-linux-amd64.tar.gz ${instance}/home/ubuntu/
+    lxc file push crictl-v$CRICTL_VERSION-linux-amd64.tar.gz ${instance}/home/ubuntu/
+    lxc file push cni-plugins-linux-amd64-v$CNI_PLUGINS_VERSION.tgz ${instance}/home/ubuntu/
+    lxc file push containerd-$CONTAINERED_VERSION-linux-amd64.tar.gz ${instance}/home/ubuntu/
 
-    lxc exec ${instance} -- tar -xvf /home/ubuntu/crictl-v1.21.0-linux-amd64.tar.gz -C /usr/local/bin/
-    lxc exec ${instance} -- tar -xvf /home/ubuntu/cni-plugins-linux-amd64-v0.9.1.tgz -C /opt/cni/bin/
-    lxc exec ${instance} -- tar -xvf /home/ubuntu/containerd-1.4.4-linux-amd64.tar.gz -C /
+    lxc exec ${instance} -- tar -xvf /home/ubuntu/crictl-v$CRICTL_VERSION-linux-amd64.tar.gz -C /usr/local/bin/
+    lxc exec ${instance} -- tar -xvf /home/ubuntu/cni-plugins-linux-amd64-v$CNI_PLUGINS_VERSION.tgz -C /opt/cni/bin/
+    lxc exec ${instance} -- tar -xvf /home/ubuntu/containerd-$CONTAINERED_VERSION-linux-amd64.tar.gz -C /
   done
 
 # CNI setup
@@ -1365,6 +1406,8 @@ lxc delete haproxy --force
 lxc storage delete $lxc_storage_name
 lxc profile delete $lxc_k8s_profile
 sudo systemctl stop lxc lxd lxcfs
+sudo systemctl stop lxd.socket 
+sudo systemctl stop lxc.socket 
 pacman -Rnc lxc lxd lxcfs
 sudo umount /var/lib/lxd/shmounts
 sudo umount /var/lib/lxd/devlxd
