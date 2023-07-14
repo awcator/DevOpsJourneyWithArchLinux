@@ -91,3 +91,28 @@ curl https://awcator:8000/ -k --key client.key --cert client.crt
 ! We can make curl to trust the certficate by sepcifing ca.crt path
 curl https://awcator:8000/ --key client.pem --cert client.crt  --cacert ca.crt
 ```
+# proxy pass
+```diff
+server {
+  listen 80;
+
+  server_name $host;
+  rewrite ^/$ https://$host/_dashboards redirect;
+
+  location ^~ /_dashboards {
+    proxy_pass https://mysite.es.amazonaws.com/_dashboards;
+    #proxy_redirect https://mysite2 https://$host;
+    proxy_redirect https://mysite.es.amazonaws.com https://$host;
+    proxy_cookie_domain mysite.es.amazonaws.com $host;
+    proxy_cookie_path ~*^/$ /_dashboards/;
+    proxy_set_header Accept-Encoding "";
+    sub_filter_types *;
+    sub_filter https://mysite.es.amazonaws.com/ $host;
+    sub_filter_once off;
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
+  }
+}
+
+```
