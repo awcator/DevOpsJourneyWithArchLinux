@@ -117,7 +117,7 @@ https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf
 ISSUER_URL=http://$ISSUER_HOSTPATH
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 PROVIDER_ARN="arn:aws:iam::$ACCOUNT_ID:oidc-provider/$ISSUER_HOSTPATH"
-ROLE_NAME=s3-echoer
+ROLE_NAME=s3-echoer2
 AWS_DEFAULT_REGION=$(aws configure get region)
 AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-central-1}
 cat > irp-trust-policy.json << EOF
@@ -142,24 +142,11 @@ EOF
 aws iam create-role --role-name $ROLE_NAME --assume-role-policy-document file://irp-trust-policy.json
 aws iam update-assume-role-policy --role-name $ROLE_NAME --policy-document file://irp-trust-policy.json
 S3_ROLE_ARN=$(aws iam get-role --role-name $ROLE_NAME --query Role.Arn --output text)
+aws iam attach-role-policy --role-name $ROLE_NAME --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 
-./deploy-s3-echoer-job.sh https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf
+# ./deploy-s3-echoer-job.sh https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf
 kubectl create sa s3-echoer2
 kubectl annotate sa s3-echoer eks.amazonaws.com/role-arn=$S3_ROLE_ARN
-# then
-# k get secrets s3-echoer2-token-ddlnr -o yaml
-# get the token base64 decode it and save it somewhere else in /tmp/token
-
-aws sts assume-role-with-web-identity \
-    --role-arn $AWS_ROLE_ARN \
-    --role-session-name YourSessionName \
-    --web-identity-token /tmp/token \
-    --duration-seconds 3600
-
-    aws sts assume-role-with-web-identity     --role-arn $AWS_ROLE_ARN     --role-session-name YourSessionName     --web-identity-token /tmp/token     --duration-seconds 3600
-    
-    
-    credentials=$(aws sts assume-role-with-web-identity --role-arn "$AWS_ROLE_ARN" --role-session-name "das" --web-identity-token "file:///tmp/token")
 
 cat > testCreds.yaml << EOF
 apiVersion: batch/v1
@@ -184,8 +171,14 @@ spec:
           value: "true"
       restartPolicy: Never
 EOF
-      
-    access_key=$(echo "$credentials" | jq -r .Credentials.AccessKeyId)
+
+# manual verification
+# then
+# getinside pod and exec and take the token
+# get the token base64 decode it and save it somewhere else in /tmp/token
+    
+credentials=$(aws sts assume-role-with-web-identity --role-arn "$AWS_ROLE_ARN" --role-session-name "das" --web-identity-token "file:///tmp/token")
+access_key=$(echo "$credentials" | jq -r .Credentials.AccessKeyId)
 secret_key=$(echo "$credentials" | jq -r .Credentials.SecretAccessKey)
 session_token=$(echo "$credentials" | jq -r .Credentials.SessionToken)
 
@@ -196,3 +189,8 @@ aws configure set aws_session_token "$session_token"
 
 # Run your AWS CLI command
 aws s3 ls
+
+
+# Refernces
+# https://github.com/aws/amazon-eks-pod-identity-webhook/blob/master/SELF_HOSTED_SETUP.md
+# https://github.com/smalltown/aws-irsa-example/compare/master...Cytrian:aws-irsa-example:master
