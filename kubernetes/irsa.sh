@@ -105,13 +105,50 @@ echo "https://$ISSUER_HOSTPATH"
 
 # added these extra
 /usr/local/bin/kube-apiserver --advertise-address=172.16.0.3 --allow-privileged=true --apiserver-count=1 --audit-log-maxage=30 --audit-log-maxbackup=3 --audit-log-maxsize=100 --audit-log-path=/var/log/audit.log --authorization-mode=Node,RBAC --bind-address=0.0.0.0 --client-ca-file=/var/lib/kubernetes/ca.pem --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota --enable-swagger-ui=true --etcd-cafile=/var/lib/kubernetes/ca.pem --etcd-certfile=/var/lib/kubernetes/kubernetes.pem --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem --etcd-servers=https://172.16.0.3:2379 --event-ttl=1h --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem --kubelet-client-key=/var/lib/kubernetes/kubernetes-key.pem --runtime-config api/all=true --service-account-key-file=/var/lib/kubernetes/service-account.pem --service-cluster-ip-range=10.32.0.0/24 --service-node-port-range=30000-32767 --tls-cert-file=/var/lib/kubernetes/kubernetes.pem --tls-private-key-file=/var/lib/kubernetes/kubernetes-key.pem --service-account-key-file=/var/lib/kubernetes/service-account.pem --service-account-signing-key-file=/var/lib/kubernetes/service-account-key.pem --service-account-issuer=https://172.16.0.2:6443 --v=2 --service-account-key-file=/tmp/sa-signer-pkcs8.pub --service-account-signing-key-file=/tmp/sa-signer.key  --api-audiences=sts.amazonaws.com --service-account-issuer=https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf 
- make cluster-up IMAGE=amazon/amazon-eks-pod-identity-webhook:latest 
+
+#create pod identitity webhook
+make cluster-up IMAGE=amazon/amazon-eks-pod-identity-webhook:latest 
 
 k get pods
 
-https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf 
-./deploy-s3-echoer-job.sh https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf
 
+# kubernetes side SA
+https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf 
+ISSUER_URL=http://$ISSUER_HOSTPATH
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+PROVIDER_ARN="arn:aws:iam::$ACCOUNT_ID:oidc-provider/$ISSUER_HOSTPATH"
+ROLE_NAME=s3-echoer
+AWS_DEFAULT_REGION=$(aws configure get region)
+AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-central-1}
+cat > irp-trust-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "$PROVIDER_ARN"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${ISSUER_HOSTPATH}:sub": "system:serviceaccount:default:${ROLE_NAME}"
+        }
+      }
+    }
+  ]
+}
+EOF
+aws iam create-role --role-name $ROLE_NAME --assume-role-policy-document file://irp-trust-policy.json
+aws iam update-assume-role-policy --role-name $ROLE_NAME --policy-document file://irp-trust-policy.json
+S3_ROLE_ARN=$(aws iam get-role --role-name $ROLE_NAME --query Role.Arn --output text)
+
+./deploy-s3-echoer-job.sh https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf
+kubectl create sa s3-echoer2
+kubectl annotate sa s3-echoer eks.amazonaws.com/role-arn=$S3_ROLE_ARN
+# then
+# k get secrets s3-echoer2-token-ddlnr -o yaml
+# get the token base64 decode it and save it somewhere else in /tmp/token
 
 aws sts assume-role-with-web-identity \
     --role-arn $AWS_ROLE_ARN \
@@ -124,6 +161,30 @@ aws sts assume-role-with-web-identity \
     
     credentials=$(aws sts assume-role-with-web-identity --role-arn "$AWS_ROLE_ARN" --role-session-name "das" --web-identity-token "file:///tmp/token")
 
+cat > testCreds.yaml << EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: s3-echoer2
+spec:
+  template:
+    spec:
+      serviceAccountName: s3-echoer2
+      containers:
+      - name: main
+        image: ubuntu:latest
+        command:
+        - "sh"
+        - "-c"
+        - "sleep 6000"
+        env:
+        - name: AWS_DEFAULT_REGION
+          value: "eu-central-1"
+        - name: ENABLE_IRP
+          value: "true"
+      restartPolicy: Never
+EOF
+      
     access_key=$(echo "$credentials" | jq -r .Credentials.AccessKeyId)
 secret_key=$(echo "$credentials" | jq -r .Credentials.SecretAccessKey)
 session_token=$(echo "$credentials" | jq -r .Credentials.SessionToken)
