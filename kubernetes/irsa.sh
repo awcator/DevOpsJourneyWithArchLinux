@@ -163,7 +163,7 @@ spec:
         command:
         - "sh"
         - "-c"
-        - "apt update && apt install -y awscli && aws s3 ls"
+        - "apt update &&  DEBIAN_FRONTEND=noninteractive apt install -y awscli && aws s3 ls"
         env:
         - name: AWS_DEFAULT_REGION
           value: "eu-central-1"
