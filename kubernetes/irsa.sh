@@ -176,7 +176,7 @@ spec:
         command:
         - "sh"
         - "-c"
-        - "sleep 6000"
+        - "apt update && apt install -y awscli && aws s3 ls"
         env:
         - name: AWS_DEFAULT_REGION
           value: "eu-central-1"
