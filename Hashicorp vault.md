@@ -502,3 +502,12 @@ cat publicKey.pem| openssl asn1parse -strparse 19 -noout -out - | openssl dgst -
 | Matching          | Used to match with the issuer's SKI              | Used to match with the subject's AKI                |
 | Certificate Chain | SKI of a certificate is placed in the AKI of the issuing certificate | AKI of a certificate is placed in the SKI of the issued certificate |
 
+
+
+# Raft, Data Migration, KMS on k8s
+```
+helm repo add hashicorp https://helm.releases.hashicorp.com
+helm search repo hashicorp/vault
+k create ns vault
+helm install vault hashicorp/vault -n vault
+```
