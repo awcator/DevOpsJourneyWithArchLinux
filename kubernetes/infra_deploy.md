@@ -1392,7 +1392,10 @@ curl -I http://${NODE_IP}:${NODE_PORT}
 #storage
 check here https://github.com/awcator/DevOpsJourneyWithArchLinux/tree/master/kubernetes/storages
 ```
-[Read here for storage setup ](https://github.com/awcator/DevOpsJourneyWithArchLinux/tree/master/kubernetes/storages)
+# Extras
+[Read here for storage setup ](https://github.com/awcator/DevOpsJourneyWithArchLinux/tree/master/kubernetes/storages) <br>
+[Read here for IRSA with AWS setup](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/AWS/irsa.md) <br>
+[Read here for Vault+Raft+IRSA with KMS setup](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/AWS/irsa.md) <br>
 # Destroy
 ```
 for i in $(seq 1 "$number_of_workers"); do
