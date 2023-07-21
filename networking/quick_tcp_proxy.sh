@@ -15,3 +15,4 @@ nc -k -l -p "$1" <"$PIPE" | nc "$2" "$3" > "$PIPE"
 
 #usage ./quick_tcp_proxy.sh 5432 google.com 80
 #alternative production style: Run haproxy/squid
+# read windows version: https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/networking/wsl_portfoward.ps1
