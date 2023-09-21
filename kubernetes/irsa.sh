@@ -1,6 +1,3 @@
-#https://cert-manager.io/docs/installation/
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-k get pods -n cert-manager
 
 cd /tmp/
 \rm -rf *
@@ -106,6 +103,18 @@ echo "https://$ISSUER_HOSTPATH"
 # added these extra
 /usr/local/bin/kube-apiserver --advertise-address=172.16.0.3 --allow-privileged=true --apiserver-count=1 --audit-log-maxage=30 --audit-log-maxbackup=3 --audit-log-maxsize=100 --audit-log-path=/var/log/audit.log --authorization-mode=Node,RBAC --bind-address=0.0.0.0 --client-ca-file=/var/lib/kubernetes/ca.pem --enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota --enable-swagger-ui=true --etcd-cafile=/var/lib/kubernetes/ca.pem --etcd-certfile=/var/lib/kubernetes/kubernetes.pem --etcd-keyfile=/var/lib/kubernetes/kubernetes-key.pem --etcd-servers=https://172.16.0.3:2379 --event-ttl=1h --experimental-encryption-provider-config=/var/lib/kubernetes/encryption-config.yaml --kubelet-certificate-authority=/var/lib/kubernetes/ca.pem --kubelet-client-certificate=/var/lib/kubernetes/kubernetes.pem --kubelet-client-key=/var/lib/kubernetes/kubernetes-key.pem --runtime-config api/all=true --service-account-key-file=/var/lib/kubernetes/service-account.pem --service-cluster-ip-range=10.32.0.0/24 --service-node-port-range=30000-32767 --tls-cert-file=/var/lib/kubernetes/kubernetes.pem --tls-private-key-file=/var/lib/kubernetes/kubernetes-key.pem --service-account-key-file=/var/lib/kubernetes/service-account.pem --service-account-signing-key-file=/var/lib/kubernetes/service-account-key.pem --service-account-issuer=https://172.16.0.2:6443 --v=2 --service-account-key-file=/tmp/sa-signer-pkcs8.pub --service-account-signing-key-file=/tmp/sa-signer.key  --api-audiences=sts.amazonaws.com --service-account-issuer=https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf 
 
+# lxc file push sa-signer-pkcs8.pub  controller-1/root
+# lxc file push sa-signer.key  controller-1/root
+
+# lxc exec controller-1 bash
+# vi /etc/systemd/system/kube-apiserver.service
+# systemctl daemon-reload
+# systemctl restart kube-apiserver.service
+
+
+#https://cert-manager.io/docs/installation/
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+k get pods -n cert-manager
 #create pod identitity webhook
 make cluster-up IMAGE=amazon/amazon-eks-pod-identity-webhook:latest 
 
@@ -146,7 +155,7 @@ aws iam attach-role-policy --role-name $ROLE_NAME --policy-arn arn:aws:iam::aws:
 
 # ./deploy-s3-echoer-job.sh https://s3.eu-central-1.amazonaws.com/oidc-test-ojopblcldcmgrbughysamnnmeggoflcf
 kubectl create sa s3-echoer2
-kubectl annotate sa s3-echoer eks.amazonaws.com/role-arn=$S3_ROLE_ARN
+kubectl annotate sa s3-echoer2 eks.amazonaws.com/role-arn=$S3_ROLE_ARN
 
 cat > testCreds.yaml << EOF
 apiVersion: batch/v1
@@ -172,6 +181,7 @@ spec:
       restartPolicy: Never
 EOF
 
+kubectl apply -f testCreds.yaml 
 # manual verification
 # then
 # getinside pod and exec and take the token

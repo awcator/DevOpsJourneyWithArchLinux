@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="netcatIPV6">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/custombins/netcatIPV6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

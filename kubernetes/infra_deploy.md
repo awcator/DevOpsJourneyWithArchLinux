@@ -61,6 +61,7 @@ haproxy_ip="${octets[0]}.${octets[1]}.${octets[2]}.${octets[3]}" #172.16.0.2
 
 
 sudo swapoff -a
+sudo modprobe nf_conntrack
 sudo sysctl -w net.netfilter.nf_conntrack_max=131072
 sudo sysctl -w kernel/panic=10   #reset to 0
 sudo sysctl -w kernel/panic_on_oops=1 #reset to 0
@@ -82,13 +83,13 @@ ip link show $hostmachine_to_k8s_network_bridge
 sudo ip addr add $bridge_starting_ip/$bridge_netmask_bits dev $hostmachine_to_k8s_network_bridge
 sudo sysctl net.ipv4.ip_forward=1
 
--#for wsl use legacy iptables
+#for wsl use legacy iptables
 sudo iptables-legacy -t nat -A POSTROUTING -o $hostmachine_iface  -j MASQUERADE
 sudo iptables-legacy -t nat -A POSTROUTING -s $bridge_subnet -o $hostmachine_to_k8s_network_bridge -j MASQUERADE
 sudo iptables-legacy -A FORWARD -i $hostmachine_to_k8s_network_bridge -o $hostmachine_iface -j ACCEPT
 sudo iptables-legacy -A FORWARD -i $hostmachine_iface -o $hostmachine_to_k8s_network_bridge -m state --state RELATED,ESTABLISHED -j ACCEPT
 sudo iptables-legacy -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-+#for linux hosts
+#for linux hosts
 sudo iptables -t nat -A POSTROUTING -o $hostmachine_iface  -j MASQUERADE
 sudo iptables -t nat -A POSTROUTING -s $bridge_subnet -o $hostmachine_to_k8s_network_bridge -j MASQUERADE
 sudo iptables -A FORWARD -i $hostmachine_to_k8s_network_bridge -o $hostmachine_iface -j ACCEPT
@@ -951,7 +952,7 @@ wget -q --show-progress --https-only --timestamping \
 # CNI setup
 for instance in $(seq 1 "$number_of_workers"); do
 POD_CIDR=10.1.${instance}.0/24
-NODE_IP=$(lxc ls |\grep worker-${i}|awk {'print $6'})
+NODE_IP=$(lxc ls |\grep worker-${instance}|awk {'print $6'})
 sudo ip route add $POD_CIDR via $NODE_IP dev $hostmachine_to_k8s_network_bridge 
 #  sudo ip route add 10.1.3.0/24 via 172.16.0.5 dev br0
 # sudo route add -net 10.1.2.0 netmask 255.255.255.0 gw 172.16.0.6
@@ -1385,7 +1386,7 @@ kubectl exec -ti $POD_NAME -- nginx -v
 #services
 kubectl expose pod nginx --port 80 --type NodePort
 NODE_PORT=$(kubectl get svc nginx    --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
-NODE_IP=$(lxc ls |\grep worker-${i}|awk {'print $6'})
+NODE_IP=$(lxc ls |\grep worker-1|awk {'print $6'})
 curl -I http://${NODE_IP}:${NODE_PORT}
 
 
