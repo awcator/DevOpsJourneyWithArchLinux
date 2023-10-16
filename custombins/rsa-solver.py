@@ -92,3 +92,70 @@ if __name__ == "__main__":
 # http://crypto.stackexchange.com/questions/19413/what-are-dp-and-dq-in-encryption-by-rsa-in-c
 # https://en.wikipedia.org/wiki/RSA_(cryptosystem)#Using_the_Chinese_remainder_algorithm
 # https://zzundel.blogspot.com/2011/02/rsa-implementation-using-python.html
+
+------------------------------------------------------------------------------
+# nodeJS way
+
+const fs = require('fs');
+const BigInteger = require('big-integer'); // You'll need to install the 'big-integer' package from npm
+
+const p = BigInteger('6958271393287170117448891021448827870244652620796166337874899406278127643022124226656230972235829204217718701711355755622520840943962368410353060326959627');
+const q = BigInteger('10816988558466468069802205154113557859050665172995721741674476865844313409030354507360669179381457836401919224815040955096510785560864262908230559354811907');
+
+const n = p.multiply(q);
+const e = BigInteger('65537');
+
+const phin = p.subtract(1).multiply(q.subtract(1));
+
+function extendedEuclidean(a, b) {
+    if (a.isZero()) {
+        return { d: b, x: BigInteger.zero, y: BigInteger.one };
+    }
+
+    const { d, x: x1, y: y1 } = extendedEuclidean(b.mod(a), a);
+    const x = y1.subtract(b.divide(a).multiply(x1));
+    const y = x1;
+
+    return { d, x, y };
+}
+
+function modInv(a, m) {
+    const { d, x } = extendedEuclidean(a, m);
+    if (!d.equals(BigInteger.one)) {
+        throw new Error("The modular inverse does not exist.");
+    }
+    return x.isNegative() ? x.add(m) : x;
+}
+
+const A1=BigInteger('3120');
+const B1=BigInteger('17');
+console.log("asnwer is ",modInv(phin,e))
+
+const hexString = 'flag';
+const decimalValue = Buffer.from(hexString, 'utf-8').toString('hex');
+const m = BigInteger(decimalValue, 16);
+
+const gcdResult = BigInteger.gcd(e, phin);
+if (!gcdResult.equals(BigInteger.one)) {
+    throw new Error("GCD(e, phin) is not equal to 1");
+}
+
+const ciphertext = m.modPow(e, n);
+const D=modInv(e,phin)
+const deciphertext=ciphertext.modPow(D,n);
+const awcator="f17f30955cd9067c83242fc1502a7f1a"
+console.log("D",D)
+console.log("ciphertext",ciphertext)
+console.log("deciphertext",deciphertext)
+console.log("m",m)
+console.log("plain m",m.toString(16));
+console.log("DinHexa",D.toString(16));
+console.log("one check",D.multiply(e).mod(phin));
+console.log("--------------------------------")
+cipher2 = BigInteger("4d75570698c866285c43b83c79549987a6fdcf873dac5c6e7e2b83fd7a28f8b1ee15473a45851877ec4fb358c547566c0f75430d77c74c6a1feb63caa927ebc2e1053a5ef4d0e6c7bbf2802728e3829232ecde876ca8d9fd831a3af5949bb1fd987e02bfb80c5b58880dd66c848495b5ad0c43a63929803b521bae462ef07d0f", 16);
+const deciphertext2=cipher2.modPow(D,n);
+console.log("deciphertext",deciphertext2)
+console.log(deciphertext2.toString(16));
+const ciphertextHex = ciphertext.toString(16);
+
+fs.writeFileSync('ciphertext.txt', ciphertextHex);
