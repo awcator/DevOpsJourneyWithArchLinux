@@ -191,6 +191,8 @@ WordPres:wpscan -u 10.10.10.10/wp/ -eu
 ```
 # 3.	SOLVING CIPHER
 ```
+	AES-256-cbc decrypt:
+	openssl enc -d -aes-256-cbc -in /path/file.enc -out /path/palin.txt -k "The key"
 	Cracking MD5
 	echo -n "fuckyou" | md5sum | cut -f 1 -d " " > password
 	john --format=raw-md5 --wordlist=~/Documents/PasswordDict/rockyou.txt password
@@ -239,8 +241,10 @@ WordPres:wpscan -u 10.10.10.10/wp/ -eu
 ```
 # 4.  Analyzing Images or FIles:
 ```
+	Files can be polygot. Just change the extension or use like it was not supposed to use, eg. java -jar a.docx
 	file filename
 	Strings filename
+	zbarimg to view gifs frames and runs QR/bar codes againt it
 	zsteg,steghide extract -sf filename
 	exsiftool file
 	binwalk --dd='.*' best_meme.jpg 
@@ -259,7 +263,10 @@ WordPres:wpscan -u 10.10.10.10/wp/ -eu
 	retdec-decompiler.py
 	strace
 	ltrace
-	IDA64
+	IDA64, ghidra <-- for .so files
+	Dnspy for dotnet applications
+	defordot <-- for deobfurscating .nt application
+	jadx, apkeasy, apktool for android apks
 ```
 # 5.  SHELLS
 ```
