@@ -35,7 +35,8 @@ vi /var/lib/postgres/data/postgresql.conf
 log_statement = 'all'
 logging_collector = on
 log_directory = '/tmp/pglogs/'
-
+log_filename = 'postgresql-%Y-%m-%d_%I:%M:%S %p.log'
+log_file_mode = 0600 
 # /usr/bin/postgres -D /var/lib/postgres/data
 # pg_ctl -D '‘/var/lib/postgres/data/’' -l logfile start
 ```
@@ -84,9 +85,22 @@ docker cp d9:/usr/local/lib/postgresql/plv8-3.2.2.so  . #d9 is containerID
 docker cp d9:/usr/local/lib/postgresql/bitcode/plv8-3.2.2 . #d9 is containerID
 docker exec d9 bash -c "mkdir -p /extension; cp -f /usr/local/share/postgresql/extension/plv* /extension"
 docker cp d9:/extension . #d9 is containerID
-```
 
+sudo mv extension/*  /usr/share/postgresql/extension/
+sudo mv plv8-3.2.2.so /usr/share/postgresql/
+sudo mv plv8-3.2.2 /usr/share/postgresql/
+sudo vim /usr/share/postgresql/extension/plv8.control
+module_pathname = '/usr/share/postgresql/plv8-3.2.2'
+pacman -S musl
+sudo ln -sf /usr/lib/musl/lib/libc.so /usr/lib/libc.musl-x86_64.so.1
+psql -U awcator -h localhost -p 5432 mydb
+CREATE EXTENSION plv8;
+#DROP EXTENSION plv8;
 ```
+### some testing
+```
+DO $$ plv8.elog(NOTICE, 'this', 'is', 'inline', 'code'); $$ LANGUAGE plv8;
+
 create or replace function hello_world(name text)
 returns text as $$
 
@@ -94,4 +108,5 @@ returns text as $$
     return output;
 
 $$ language plv8;
+select * from hello_world('awcator');
 ```
