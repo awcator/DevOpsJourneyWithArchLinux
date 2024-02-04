@@ -201,7 +201,7 @@ extendedKeyUsage  = serverAuth
 cd ca/
 mkdir certs crl newcerts 
 touch index .rand
-echo 69696 > serial # insted of echoing 6969 make use of this  'openssl rand -hex 16'
+openssl rand -hex 16 > serial
 cd ../
 
 # generate RootCA certificaite
@@ -334,7 +334,7 @@ IP.1 = 192.168.0.13 # Optionally, add an IP address (if the connection which you
 cd intermediate-ca/
 mkdir certs crl newcerts csr
 touch index .rand
-echo 69696 > serial # insted of echoing 6969 make use of this  'openssl rand -hex 16'
+openssl rand -hex 16 > serial 
 cd ../
 
 openssl req -config intermediate-ca/config -new -key intermediate-ca/intermediateCa.key -sha256 -out intermediate-ca/csr/intermediate_Ca.csr
