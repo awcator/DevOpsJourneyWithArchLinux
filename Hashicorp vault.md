@@ -316,15 +316,22 @@ nsCertType   = server
 nsComment   =  "OpenSSL Generated Server Certificate"
 subjectKeyIdentifier  = hash
 authorityKeyIdentifier  = keyid,issuer:always
-keyUsage   =  critical, digitalSignature, keyEncipherment
+keyUsage   =  critical, digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 extendedKeyUsage  = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = ${ENV::COMMON_NAME} # Be sure to include the domain name here because Common Name is not so commonly honoured by itself
+DNS.2 = bar.${ENV::COMMON_NAME} # Optionally, add additional domains (I've added a subdomain here)
+DNS.3 = foo.${ENV::COMMON_NAME}
+IP.1 = 192.168.0.13 # Optionally, add an IP address (if the connection which you have planned requires it)
 
 
 ```
 
 #### Generate IntermediateCA Certificate
 ```
-cd ca/
+cd intermediate-ca/
 mkdir certs crl newcerts csr
 touch index .rand
 echo 69696 > serial # insted of echoing 6969 make use of this  'openssl rand -hex 16'
@@ -347,6 +354,7 @@ openssl x509 -text -in intermediate-ca/certs/intermediateCa.crt -noout
 ```
 #### Server Certificate generation
 ```
+export DOMAIN_NAME=awcator.com
 openssl req -key server/server.key -new  -sha256 -out server/my_Server.csr
 -# give commonName as ur domain name, here used: accd.google.com
 openssl ca -config ~/awcatorPKI/intermediate-ca/config -extensions server_cert -days 365 -notext -in server/my_Server.csr -out server/server.crt
