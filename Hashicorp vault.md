@@ -354,7 +354,10 @@ openssl ca -config ~/awcatorPKI/intermediate-ca/config -extensions server_cert -
 cat server/server.crt  intermediate-ca/certs/intermediateCa.crt > server/chain_server.crt
 # for chain
 cat server/server.crt  intermediate-ca/certs/intermediateCa.crt  ca/certs/ca.crt> server/full_chain_server.crt
-# for chain
+# --------------------- custom singing using burp CA, incase you want to put this infront of haproxy
+# openssl genrsa  -out server.key 2048
+# openssl req -key server.key -new  -sha256 -out my_Server.csr
+# openssl x509 -req -in my_Server.csr -days 365 -CA burpCA.crt -CAkey burpCA.key -CAcreateserial -out my_signed_cert.pem
 ```
 
 #### verifiy CustomPKI
