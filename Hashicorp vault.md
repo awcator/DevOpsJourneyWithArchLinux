@@ -384,7 +384,12 @@ sudo cp ca/certs/ca.crt /etc/ca-certificates/trust-source/anchors/
 #sudo update-ca-certificates -v
 sudo update-ca-trust -v
 Now only your system trust the CA
-curl https://abcd.google.com works
+curl https://abcd.google.com #works
+
+#for java
+C:\Users\awcator\.jdks\openjdk-21.0.2\bin\keytool -importcert -alias awcatoralias -keystore cacerts -storepass changeit -file awcatorCA.der
+C:\Users\awcator\.jdks\openjdk-21.0.2\bin\keytool -importcert -alias awcatorIntermidatealias -keystore cacerts -storepass changeit -file awcatorIntermediateCA.der 
+C:\Users\awcator\.jdks\openjdk-21.0.2\bin\keytool -keystore cacerts -storepass changeit -list
 ```
 ![image](https://user-images.githubusercontent.com/54628909/236613514-5053e9b8-d7bd-4d7f-961e-b5ce4937ee6f.png)
 #### after trusting CA
