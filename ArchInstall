@@ -1,0 +1,231 @@
+pacstrap /mnt base
+pacman -S sudo
+yes y|pacman-key --init
+yes y|pacman-key --populate archlinux
+yes y|pacman -Syyu
+yes y|sudo pacman -S git dns-utils bind net-tools netcat nmap
+passwd
+useradd -G wheel -s /bin/bash awcator
+passwd awcator
+
+pacman -S vi vim binutils go tmux make gcc
+cd /opt
+sudo git clone https://aur.archlinux.org/yay-git.git
+cd yay-git
+makepkg -si
+/etc/pacman.d/gnupg/gpg.conf
+keyserver hkp://keyserver.ubuntu.com
+
+pacman-key --init
+pacman-key --populate archlinux
+pacman -Syyu base base-devel git vim wget reflector bash 
+pacman -S cargo neovim kubectl tmux kubectx aws-cli maven pkgfile xorg-xauth  bash-completion bind lxd docker net-tools xclip yq jq
+reflector --country "India" --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+alias mirftu='sudo pacman-mirrors --fasttrack 10 && sudo pacman -Syyu'
+
+useradd -m -G wheel -s /bin/bash -d /home/awcator awcator
+passwd awcator
+passwd root
+sed -i '/%wheel ALL=(ALL) ALL/c\%wheel ALL=(ALL) ALL'  /etc/sudoers
+sed -i 's:#en_US.UTF-8 UTF-8:en_US.UTF-8 UTF-8:g' /etc/locale.gen
+locale-gen
+echo LANG=en_US.UTF-8 >> /etc/locale.conf
+echo LANGUAGE=en_US.UTF-8 >> /etc/locale.conf
+echo LC_ALL=en_US.UTF-8 >> /etc/locale.confS
+su awcator
+mkdir ~/yay; cd ~/yay
+wget "https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=yay" --output-document=./PKGBUILD
+makepkg -si
+yay -S aur/cloudfoundry-cli
+sudo pkgfile --update
+
+
+#Audio
+sudo pacman -S pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber helvum
+systemctl --user enable --now pipewire.socket
+systemctl --user enable --now pipewire-pulse.socket
+systemctl --user enable --now wireplumber.service
+
+yay -S aur/i3-battery-popup-git
+
+#polkit rules
+cat /etc/polkit-1/rules.d/enableMounts.rules
+polkit.addRule(function(action, subject) {
+        if (action.id == 'org.freedesktop.udisks2.filesystem-mount-system' &&  subject.user == 'awcator') {
+            return polkit.Result.YES;
+        }
+    }
+);
+sudo ln -s /usr/share/zoneinfo/Asia/Kolkata /etc/localtimeq
+ sudo timedatectl set-ntp true
+s hwclock --systohc
+
+https://www.warp.dev/terminus/show-hide-line-numbers-in-vim-vi
+
+
+#SamabShare
+https://obihoernchen.net/877/setup-samba-4-on-arch-linux/
+pacman -Sy samba
+s systemctl enable smb nmb
+groupadd samba
+pdbedit -a -u awcator
+nano /etc/samba/smb.conf
+[global]
+   workgroup = AWCATOR_SAMBA_WK_GRP
+   server string = AwcatorSamba
+   netbios name = AwcatorNetBios
+   # hosts allow = 192.168.0.
+   printcap name = /dev/null
+   load printers = no
+   disable spoolss = yes
+   printing = bsd
+   show add printer wizard = no
+   print notify backchannel = no
+   log file = /var/log/samba/log.%m
+   max log size = 50
+   security = user
+   dns proxy = no
+   # For public share without login
+   map to guest = Bad User
+
+   # Android bugix for reading files (samba4 bug see: https://bugzilla.samba.org/show_bug.cgi?id=9706)
+   unix extensions = false
+
+   # Fix for file batch copy issues (see: http://archlinuxarm.org/forum/viewtopic.php?f=18&t=4864) - seems to be fixed now (28.09.2015)
+   # oplocks = no
+   # level2 oplocks = no
+
+   # Some Tuning (See Optimize Performance)
+   socket options = TCP_NODELAY IPTOS_LOWDELAY
+   write cache size = 262144
+   # sendfile will interrupt data transfer :/ (but cpu usage is less) - seems to be fixed now (03.05.2015)
+   use sendfile = true
+   getwd cache = yes
+   min receivefile size = 16384
+   max xmit = 65536
+   # Global security
+   public = yes
+
+#============================ Share Definitions ==============================
+
+# Public, read only
+[Videos]
+        comment = Videos for all
+        read only = yes
+        # use this only for read only shares!
+        fake oplocks = yes
+        path = /media/zincobi/Videos
+
+# Public, writeable
+[Abrechnungen]
+        comment = Abrechnungen
+        read only = no
+        writeable = yes
+        path = /media/zincobi/Abrechnungen
+
+# whole HDD, only for awcator
+[awcator]
+        comment = Awcators share
+        public = no
+        valid users = awcator
+        read only = no
+        writeable = yes
+        path = /
+
+s systemctl start smb nmb
+#secure boot
+bctl create-keys
+sbctl enroll-keys -m
+sbctl verify
+ sudo find /boot -type f -exec sh -c 'sbctl sign -s "{}"' \;
+
+ sudo grub-install --target=x86_64-efi --efi-directory=esp --bootloader-id=GRUB --modules="tpm" --disable-shim-lock
+
+Regenerate your grub configuration:
+
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+
+Install the sbctl tool:
+
+sudo pacman -S sbctl
+
+As a pre-requisite, in your UEFI settings, set your secure boot mode to setup mode.
+
+Upon re-booting, verify that you are in setup mode:
+
+sbctl status
+
+Create your custom secure boot keys:
+
+sudo sbctl create-keys
+
+Enroll your custom keys (note -m is required to include Microsoft's CA certificates)
+
+sudo sbctl enroll-keys -m
+
+Verify that your keys have successfully been enrolled:
+
+sbctl status
+
+Check which files need to be signed for secure boot to work:
+
+sudo sbctl verify
+
+Sign all unsigned files (below is what I needed to sign, adjust according to your needs):
+
+sudo sbctl sign -s /efi/EFI/GRUB/grubx64.efi
+
+You may get an error because of an issue with certain files being immutable. To make those files mutable, run the following command for each file then re-sign afterwards:
+
+sudo chattr -i /sys/firmware/efi/efivars/<filename>
+
+Verify that everything has been signed:
+
+sudo sbctl verify
+
+Finally, in your UEFI settings, enable secure boot, and reboot.
+
+Verify that secure boot is enabled:
+
+sbctl status
+
+
+Hibernatig on Arch Linux
+Hibernation is not an option by default and requires some simple work to establish.
+
+Confgiure your boot loader.
+With GRUB: * get your swap partition UUID lsblk -no UUID /dev/SWAP where SWAP is your swap partition. * sudo nano /etc/default/grub * Find the string containing GRUB_CMDLINE_LINUX_DEFAULT='quiet'. (Instead of quiet there can be anything) * Insert resume=UUID=yourSwapPartitionUUID in quotes. * My example is GRUB_CMDLINE_LINUX_DEFAULT='quiet resume=UUID=c55290c5-c2d9-4135-b0d7-498eb22b653d'. * Save the file (Ctrl-x, y, Enter)
+Run sudo grub-mkconfig -o /boot/grub/grub.cfg to generate grub config.
+Configure config file of initramfs generator:
+Edit the cofig: * sudo nano /etc/mkinitcpio.conf * Find the line that looks like this: HOOKS="base udev autodetect modconf block filesystems keyboard fsck". It is located in the section named HOOKS. * After udev insert hook resume (Like this: ..base udev resume..) * Save the file (Ctrl-x, y, Enter)
+Run mkinitcpio -p linux to generate initramfs.
+Use systemctl hibernate to hibernate!
+sudo sysctl -w vm.swappiness=1
+
+default is 60, for high perfomance if you havve large ram make use of it insted of swapping everytime.
+
+
+
+If you have a Wi-Fi interface on a computer/laptop connected to the Internet, you may wish to setup a Wi-Fi hotspot.
+
+Check if your Wi-Fi interface supports AP interface mode:
+Install iw package (via pacman for example).
+iw list:
+...
+Supported interface modes:
+  	 * IBSS
+  	 * managed
+  	 * AP      <---- (this means your interface able to be a hotspot)
+  	 * AP/VLAN
+  	 * WDS
+  	 * monitor
+  	 * mesh point
+  ...
+Install create_ap from AUR (using yaourt or any other aur helper). It is possible to do next steps manually, but if you don't need any special configuration using create_ap is just fine.
+See ip link to see your Wi-Fi interface, and the interface where your internet comes from (say eth0).
+Run one of:
+create_ap wlan0 eth0 MyAccessPoint to create a hotspot without a password.
+create_ap wlan0 eth0 MyAccessPoint MyPassPhrase to create a hotspot with a password.
+create_ap -n wlan0 MyAccessPoint MyPassPhrase to create a hotspot w/o an Internet sharing. For example to setup a LAN.
+
+
