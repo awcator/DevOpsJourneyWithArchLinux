@@ -154,3 +154,34 @@ sudo brctl delbr $bridge_name
 ```
 delete the NAT rules from:
 read: https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/networking/iptables.md#see-all-the-rules-defined-from-all-the-tabels
+
+# Multiple network interface setup on a single node, and bind a process to a specific interface
+```diff
+#Get the basic interface details like resolver, dhcpcd details, subnet, routes by running, ip route and ifconfig. 
+# example 
+# enp0s20f0u2: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+# inet 192.168.67.77  netmask 255.255.255.0  broadcast 192.168.67.255
+# default via 192.168.67.228 dev enp0s20f0u2 proto dhcp src 192.168.67.76 metric 1006
+
+
+# start createing a new NS and bind our interface into it and run a firefox under it
+sudo ip netns add myNamespace
+#link iface to netns
+
+sudo ip netns add myNamespace
+#link iface to netns
+sudo ip link set enp0s20f0u2 netns myNamespace
+#set ip address in namespace
+sudo ip netns exec myNamespace ifconfig enp0s20f0u2 192.168.67.77/24 up
+#set loopback (may be needed by process run in this namespace)
+sudo ip netns exec myNamespace ifconfig lo 127.0.0.1/8 up
+#set route in namespace
+sudo ip netns exec myNamespace route add default gw 192.168.67.228
+#force firefox to run inside namespace (using eth0 as outgoing interface and the route)
+sudo ip netns exec myNamespace firefox
+# or run in user mode
+sudo ip netns exec myNamespace su - $USER -c 'env someExtraENV=Value  firefox'
+
+
+
+```

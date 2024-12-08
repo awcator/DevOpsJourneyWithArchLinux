@@ -189,6 +189,23 @@ Verify that secure boot is enabled:
 
 sbctl status
 
+hook for pacman /etc/pacman.d/90-sbctl.hook
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Target = boot/*
+Target = efi/*
+Target = usr/lib/modules/*/vmlinuz
+Target = usr/lib/initcpio/*
+Target = usr/lib/**/efi/*.efi*
+[Action]
+Description = Signing EFI binaries...
+When = PostTransaction
+Exec = /usr/bin/sbctl sign-all -g||true
+
+
 
 Hibernatig on Arch Linux
 Hibernation is not an option by default and requires some simple work to establish.
@@ -229,3 +246,94 @@ create_ap wlan0 eth0 MyAccessPoint MyPassPhrase to create a hotspot with a passw
 create_ap -n wlan0 MyAccessPoint MyPassPhrase to create a hotspot w/o an Internet sharing. For example to setup a LAN.
 
 
+#clamav setup
+pacman -S clamav
+sudo freshclam
+clamd
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+
+/etc/clamd/clam.conf
+LogFile /var/log/clamav/clamd.log
+LogTime yes
+PidFile /run/clamav/clamd.pid
+TemporaryDirectory /tmp
+LocalSocket /run/clamav/clamd.ctl
+LocalSocket /run/clamav/clamd.ctl
+MaxThreads 30
+MaxQueue 200
+ExcludePath ^/proc/
+ExcludePath ^/sys/
+MaxDirectoryRecursion 20
+ConcurrentDatabaseReload yes
+VirusEvent /opt/send_virus_alert_sms.sh
+User root
+ScanPE yes
+ScanELF yes
+OnAccessIncludePath /home
+
+
+/opt/send_virus_alert_sms.sh
+
+#!/bin/bash
+export DISPLAY=:0
+
+# Get the file name and virus name from environment variables
+FILENAME="$CLAM_VIRUSEVENT_FILENAME"
+VIRUSNAME="$CLAM_VIRUSEVENT_VIRUSNAME"
+
+# Current timestamp
+TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+
+# Use notify-send to create a desktop notification
+sudo -u awcator DISPLAY=:0 DBUS_ADDRESS=unix:path=/run/user/1000/bus DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus notify-send -u critical -t 30000 "Virus Detected!" \
+"Date: $TIMESTAMP
+File: $FILENAME
+Virus: $VIRUSNAME"
+
+# Optionally log the event to a file
+LOG_FILE="/home/awcator/Documents/log/clamav/virus_alert.log"
+echo "$TIMESTAMP - Virus detected: $VIRUSNAME in file $FILENAME" >> "$LOG_FILE"
+
+#GTK theme
+pacman -S gtk-engine-murrine gtk-engines
+git clone https://github.com/vinceliuice/Vimix-gtk-themes
+./install.sh -t all -s all
+lxappearance
+
+
+
+
+
+#MultiInterface Download
+#create netns
+enp0s20f0u2: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+inet 192.168.67.77  netmask 255.255.255.0  broadcast 192.168.67.255
+default via 192.168.67.228 dev enp0s20f0u2 proto dhcp src 192.168.67.76 metric 1006
+
+
+sudo ip netns add myNamespace
+#link iface to netns
+sudo ip link set enp0s20f0u2 netns myNamespace
+#set ip address in namespace
+sudo ip netns exec myNamespace ifconfig enp0s20f0u2 192.168.67.77/24 up
+#set loopback (may be needed by process run in this namespace)
+sudo ip netns exec myNamespace ifconfig lo 127.0.0.1/8 up
+#set route in namespace
+sudo ip netns exec myNamespace route add default gw 192.168.67.228
+#force firefox to run inside namespace (using eth0 as outgoing interface and the route)
+sudo ip netns exec myNamespace firefox
+
+
+
+
+ip netns add [INTERFACE_NAME]_ns
+ip link set dev [INTERFACE_NAME] netns [INTERFACE_NAME]_ns
+ip netns exec [INTERFACE_NAME]_ns ifconfig [INTERFACE_NAME] 10.1.1.10/24 up
+ip netns exec [INTERFACE_NAME]_ns ifconfig lo 127.0.0.1/8 up
+ip netns exec [INTERFACE_NAME]_ns route add default gw 10.1.1.1
+ip netns exec [INTERFACE_NAME]_ns dhcpcd [INTERFACE_NAME]
+ip netns exec [INTERFACE_NAME]_ns sudo -b -u [YOUR_USER] [APP_NAME] 2> /dev/null 1> /dev/null &
+ip -all netns list
+ip -all netns delete
+ip netns del name
