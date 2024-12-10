@@ -1,4 +1,8 @@
 #!/bin/bash
+
+
+# usage renpySafeGameLauncher.sh ./mygame.sh
+# renpySafeGameLauncher.sh firefox
 xhost +local:*
 docker run --device /dev/dri/ -it   \
 	-v /run/user/$(id -u)/pulse:/run/user/1000/pulse:ro \
