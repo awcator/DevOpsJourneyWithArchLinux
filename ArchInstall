@@ -1,9 +1,8 @@
-pacstrap /mnt base
+pacstrap /mnt base 
 pacman -S sudo
 yes y|pacman-key --init
 yes y|pacman-key --populate archlinux
 yes y|pacman -Syyu
-yes y|sudo pacman -S git dns-utils bind net-tools netcat nmap
 passwd
 useradd -G wheel -s /bin/bash awcator
 passwd awcator
@@ -15,13 +14,15 @@ cd yay-git
 makepkg -si
 /etc/pacman.d/gnupg/gpg.conf
 keyserver hkp://keyserver.ubuntu.com
+pacman -S reflector
+reflector --country "India" --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+alias mirftu='sudo pacman-mirrors --fasttrack 10 && sudo pacman -Syyu'
 
 pacman-key --init
 pacman-key --populate archlinux
-pacman -Syyu base base-devel git vim wget reflector bash 
-pacman -S cargo neovim kubectl tmux kubectx aws-cli maven pkgfile xorg-xauth  bash-completion bind lxd docker net-tools xclip yq jq
-reflector --country "India" --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-alias mirftu='sudo pacman-mirrors --fasttrack 10 && sudo pacman -Syyu'
+pacman -Syyu base base-devel git vim wget reflector bash xorg linux-headers git dns-utils bind net-tools netcat nmap extra/breeze-icons
+pacman -S cargo neovim kubectl tmux kubectx aws-cli maven pkgfile xorg-xauth  bind nmap pkgfile  openssl dos2unix tmux bash-completion bind lxd docker net-tools xclip yq jq code thunar gedit vlc gvfs thunar-volman
+
 
 useradd -m -G wheel -s /bin/bash -d /home/awcator awcator
 passwd awcator
@@ -46,7 +47,7 @@ systemctl --user enable --now pipewire.socket
 systemctl --user enable --now pipewire-pulse.socket
 systemctl --user enable --now wireplumber.service
 
-yay -S aur/i3-battery-popup-git
+yay -S aur/i3-battery-popup-git aur/intellij-idea-ultimate-edition megasync-bin teams-for-linux-bin keybase-bin keybase-gui keybase-bash-completion-git brave-bin pacdep
 
 #polkit rules
 cat /etc/polkit-1/rules.d/enableMounts.rules
@@ -311,17 +312,21 @@ enp0s20f0u2: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 inet 192.168.67.77  netmask 255.255.255.0  broadcast 192.168.67.255
 default via 192.168.67.228 dev enp0s20f0u2 proto dhcp src 192.168.67.76 metric 1006
 
+inet 192.168.128.142  netmask 255.255.255.0  broadcast 192.168.128.255
+default via 192.168.128.222 dev enp0s20f0u2 proto dhcp src 192.168.128.142 metric 100
+
 
 sudo ip netns add myNamespace
 #link iface to netns
 sudo ip link set enp0s20f0u2 netns myNamespace
 #set ip address in namespace
-sudo ip netns exec myNamespace ifconfig enp0s20f0u2 192.168.67.77/24 up
+sudo ip netns exec myNamespace ifconfig enp0s20f0u2 192.168.128.142/24 up
 #set loopback (may be needed by process run in this namespace)
 sudo ip netns exec myNamespace ifconfig lo 127.0.0.1/8 up
 #set route in namespace
-sudo ip netns exec myNamespace route add default gw 192.168.67.228
+sudo ip netns exec myNamespace route add default gw 192.168.128.222
 #force firefox to run inside namespace (using eth0 as outgoing interface and the route)
+sudo ip netns exec myNamespace ping 1.1.1.1
 sudo ip netns exec myNamespace firefox
 
 
@@ -337,3 +342,10 @@ ip netns exec [INTERFACE_NAME]_ns sudo -b -u [YOUR_USER] [APP_NAME] 2> /dev/null
 ip -all netns list
 ip -all netns delete
 ip netns del name
+
+
+
+#Nvidia GPU
+sudo pacman -S nvidia nvidia-utils nvidia-settings nvidia-container-toolkit
+sudo nvidia-xconfig
+nvidia-smi
