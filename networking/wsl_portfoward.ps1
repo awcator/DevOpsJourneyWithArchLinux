@@ -33,3 +33,9 @@ for( $i = 0; $i -lt $ports.length; $i++ ){
   iex "netsh interface portproxy add v4tov4 listenport=$port listenaddress=$addr connectport=$port connectaddress=$remoteport";
 }
 #iex "netsh interface portproxy add v4tov4 listenport=4444 listenaddress=0.0.0.0 connectport=4444 connectaddress=172.20.19.92";         
+
+
+#----------------tldr
+#netsh advfirewall firewall add rule name="Allow Port 4445" dir=in action=allow protocol=TCP localport=4445
+#netsh advfirewall firewall show rule name=all | findstr 4445
+#iex "netsh interface portproxy add v4tov4 listenport=4445 listenaddress=0.0.0.0 connectport=4444 connectaddress=172.28.166.128";
