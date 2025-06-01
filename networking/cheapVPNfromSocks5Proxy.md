@@ -164,3 +164,14 @@ sudo iptables -t nat -A REDSOCKS -p tcp -j REDIRECT --to-ports 12345
 # Apply to outbound traffic
 sudo iptables -t nat -A OUTPUT -p tcp -j REDSOCKS
 ```
+
+#cleanup
+```
+# Delete the OUTPUT chain redirection
+sudo iptables -t nat -D OUTPUT -p tcp -j REDSOCKS
+
+# Flush and delete the REDSOCKS chain
+sudo iptables -t nat -F REDSOCKS
+sudo iptables -t nat -X REDSOCKS
+
+```
