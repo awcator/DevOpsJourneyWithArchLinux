@@ -1,8 +1,8 @@
-#what is this
-suppose you have a vpn session on windows, and you want to conenct to this existing valid vpn session from another machien, where you dont have vpn crednentials/setup.
+# What is this
+Suppose you have a VPN session on Windows and want to connect to this existing, valid VPN session from another machine where you don't have VPN credentials or setup.
 
-here i'm creating port 4444 on windows, port 4445 on wsl, for socks5 proxy, refer [this](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/networking/wsl_portfoward.ps1)
-Once ports are opened, follow these in other machine
+here I'm creating port 4444 on Windows, port 4445 on WSL, for socks5 proxy, refer [this](https://github.com/awcator/DevOpsJourneyWithArchLinux/blob/master/networking/wsl_portfoward.ps1)
+Once ports are opened, follow these on the other machine
 ```
                          [ Linux App ]
                          +--------------------+
