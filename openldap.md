@@ -1,3 +1,4 @@
+# Basics
 pacman -S openldap
 /etc/openldap/slapd.conf
 ```
@@ -138,3 +139,35 @@ sudo systemctl start phpldapadmin.service
 sudo systemctl status phpldapadmin.service
 ```
 
+# Overlays
+add overlay liens in slapd.conf
+```
+include         /etc/openldap/schema/core.schema
+pidfile         /run/openldap/slapd.pid
+argsfile        /run/openldap/slapd.args
+modulepath      /usr/lib/openldap
+moduleload      back_mdb.la
+moduleload	auditlog
+database config
+database        mdb
+maxsize         1073741824
+overlay		auditlog   #<-------------------------------------------------- notice
+auditlog        /var/tmp/awcator_ldap_logs.ldif #<-------------------------------------------------- notice
+suffix          "dc=awcator,dc=com"
+rootdn          "cn=awcator-root,dc=awcator,dc=com"
+rootpw          secret
+directory       /var/lib/openldap/openldap-data
+index   objectClass     eq
+database monitor
+
+```
+```
+touch /var/tmp/awcator_ldap_logs.ldif
+sudo chown ldap:ldap /var/tmp/awcator_ldap_logs.ldif
+```
+modify some data and view the file here. overlay demonstrated.
+
+# OLC: Online configuration 
+```
+
+```
