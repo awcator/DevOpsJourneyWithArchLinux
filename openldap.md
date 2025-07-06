@@ -1,4 +1,4 @@
-# Basics
+![image](https://github.com/user-attachments/assets/48c02f28-f9b9-444e-9e89-0959caafcc9d)![image](https://github.com/user-attachments/assets/097b35dd-9031-477c-af4b-5118217edc60)# Basics
 pacman -S openldap
 /etc/openldap/slapd.conf
 ```
@@ -162,6 +162,7 @@ database monitor
 
 ```
 ```
+man slapo-auditlog
 touch /var/tmp/awcator_ldap_logs.ldif
 sudo chown ldap:ldap /var/tmp/awcator_ldap_logs.ldif
 ```
@@ -196,6 +197,7 @@ ldapsearch -D "cn=awcator-config,cn=config" -w secret -b cn=config objectclass='
 ```
 add logs support to test
 ```
+man slapo-accesslog
 sudo mkdir -p /var/ldaplogs
 sudo chown ldap:ldap /var/ldaplogs
 ```
@@ -249,4 +251,93 @@ sudo chown ldap:ldap -R slapd.d/
 #run
 sudo /usr/lib/slapd  -u ldap -g ldap -h "ldap:/// ldapi:///" -d -1 -F /etc/openldap/slapd.d/
 #then rerun above commands to setup logs and overlay
+```
+# OLC setup
+```
+ldapsearch -D "cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com" -w dummy -b dc=awcator,dc=com objectclass='*' -H ldap://localhost:389
+# this works , we should not give access all passwords access to others for this user
+
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+add: olcAccess
+olcAccess: {0}to attrs=userPassword by self write by anonymous auth by * none
+
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+add: olcAccess
+olcAccess: {1}to * by self write by users read by * none
+
+ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  b.ldif
+ldapsearch -D "cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com" -w dummy -b dc=awcator,dc=com objectclass='*' -H ldap://localhost:389
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "olcDatabase={1}mdb,cn=config" objectclass='*' -H ldap://localhost:389
+# now only he can view his own password and mofiy passwords
+
+
+dn: cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com
+changetype: modify
+replace: userPassword
+userPassword: changeit
+
+ldapmodify -D "cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com" -w dummy -H ldap://localhost:389 -f a.ldif
+ldapsearch -D "cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com" -w dummy -b dc=awcator,dc=com objectclass='*' -H ldap://localhost:389 #fails
+ldapsearch -D "cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com" -w chnageit -b dc=awcator,dc=com objectclass='*' -H ldap://localhost:389
+```
+
+# password policy
+```
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: ppolicy
+
+dn: olcOverlay=ppolicy, olcDatabase={1}mdb,cn=config
+changetype: add
+objectclass: olcPPolicyConfig
+olcOverlay: ppolicy
+olcPPolicyDefault: cn=Normal Policy,dc=awcator,dc=com
+olcPPolicyHashClearText: TRUE
+
+
+ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  a.ldif
+
+
+dn: cn=Normal Policy,dc=awcator,dc=com
+changetype: add
+objectclass: device
+objectclass: pwdPolicy
+cn: Normal Policy
+pwdAttribute: userPassword
+pwdInHistory: 2
+
+ldapmodify -D "cn=awcator-root,dc=awcator,dc=com" -w secret -H ldap://localhost:389
+
+#now lets try chaning password
+
+dn: cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com
+changetype: modify
+replace: userPassword
+userPassword: changeit
+
+ldapmodify -D "cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com" -w changeit -H ldap://localhost:389 -f a.ldif
+# will fail because the new value  is same as old value and hence password policy is enforced 
+# change the password to something else and try again it should work, but with hashed contntests
+ldapsearch -D "cn=ewcator2 two,ou=eng-team,dc=awcator,dc=com" -w changei1t -b dc=awcator,dc=com objectclass='*' -H ldap://localhost:389
+```
+
+# loading extranal schema
+```
+# get current loaded shchema
+ ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 dn
+sudo ls /etc/openldap/schema/
+
+tmp.conf:
+include /etc/openldap/schema/somenew.schema
+slaptest -f tmp.conf -F /workarea
+then load the generated ldifs, modify the index if required:
+change dn to "dn: cn=somenewschma,cn=schema,cn=config"
+ldapadd -D "cn=awcator-config,cn=config" -w secret  -f mygenerated.ldif
+
+#verify if added
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 dn
+
 ```
