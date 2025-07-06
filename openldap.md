@@ -444,14 +444,6 @@ sudo /usr/lib/slapd -u ldap -g ldap -h "ldap:/// ldapi:///" -d 1
 ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 dn
 
 postinit.ldif
-dn: cn=opsTeam,ou=Group,dc=identity,dc=awcator,dc=com
-changetype: add
-objectClass: top
-objectClass: posixGroup
-cn: opsTeam
-gidNumber: 1005
-memberUid: placeholder
-
 dn: cn=engOpsTeam,ou=Group,dc=identity,dc=awcator,dc=com
 changetype: add
 objectClass: top
@@ -511,19 +503,6 @@ ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  /tmp/access.ldif
 ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 -b "olcDatabase={1}mdb,cn=config"
 ```
 ```
-dn: uid=opsuser,ou=People,dc=identity,dc=awcator,dc=com
-objectClass: top
-objectClass: inetOrgPerson
-objectClass: posixAccount
-uid: opsuser
-sn: Ops
-cn: opsuser
-uidNumber: 2001
-gidNumber: 1005
-homeDirectory: /home/opsuser
-loginShell: /bin/bash
-userPassword: ops123
-
 dn: uid=engtest1,ou=People,dc=identity,dc=awcator,dc=com
 objectClass: top
 objectClass: inetOrgPerson
