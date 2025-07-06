@@ -496,7 +496,7 @@ cn: Dev User
 sn: User
 uid: devuser
 uidNumber: 2001
-gidNumber: 1005
+gidNumber: 1001
 homeDirectory: /home/devuser
 loginShell: /bin/bash
 inetUserStatus: Active
@@ -504,60 +504,13 @@ userPassword: test
 
 ldapadd -x -D "cn=awcator-root,dc=identity,dc=awcator,dc=com" -w secret -H ldap://localhost:389 -f /tmp/1.ldif
 ldapsearch -D "uid=devuser,ou=People,dc=identity,dc=awcator,dc=com" -w test -b dc=identity,dc=awcator,dc=com objectclass='*' -H ldap://localhost:389-
-
-
-#access.ldif
-| Group         | Can Read           | Can Modify                | Notes                                                      |
-| ------------- | ------------------ | ------------------------- | ---------------------------------------------------------- |
-| `opsTeam`     | ✅ own data only    | ❌                         | Read-only to own attributes                                |
-| `engOpsTeam`  | ✅ own data only    | ❌                         | Same as above                                              |
-| `engTestTeam` | ✅ own + ops/engOps | ✅ modify own + ops/engOps | Cannot modify other eng users; cannot read their passwords |
-| `engRnDTeam`  | ✅ own + ops/engOps | ✅ modify own + ops/engOps | Same as `engTestTeam`                                      |
-| `engManagers` | ✅ all entries      | ❌                         | Full visibility (read-only), including passwords           |
-
-dn: olcDatabase={1}mdb,cn=config
-changetype: modify
-replace: olcAccess
-olcAccess: {0}to attrs=userPassword filter="(|(gidNumber=1005)(gidNumber=1001))"
-  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
-  by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
-  by self write
-  by anonymous auth
-  by * none
-olcAccess: {1}to attrs=userPassword filter="(|(gidNumber=1002)(gidNumber=1003)(gidNumber=1004))"
-  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by self write
-  by anonymous auth
-  by * none
-olcAccess: {2}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(|(gidNumber=1005)(gidNumber=1001))"
-  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
-  by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
-  by set="[cn=opsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by set="[cn=engOpsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by * none
-olcAccess: {3}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(gidNumber=1002)"
-  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
-  by * none
-olcAccess: {4}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(gidNumber=1003)"
-  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
-  by * none
-olcAccess: {5}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(gidNumber=1004)"
-  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by * none
-olcAccess: {6}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com"
-  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by self read
-  by * none
-
-
+```
+```diff
+# todo write access.ldif
 ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  /tmp/access.ldif
 ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 -b "olcDatabase={1}mdb,cn=config"
-
-
+```
+```
 dn: uid=opsuser,ou=People,dc=identity,dc=awcator,dc=com
 objectClass: top
 objectClass: inetOrgPerson
