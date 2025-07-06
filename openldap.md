@@ -628,6 +628,74 @@ ldapadd -x \
   -w secret \
   -H ldap://localhost:389 \
   -f /tmp/test-users.ldif
+```
+testScript
+```
+#!/bin/bash
 
+echo "=== LDAP Access Control Test Script ==="
+echo "Testing the refined access control requirements:"
+echo "- opsTeam/engOpsTeam: read-only to own data"
+echo "- engTestTeam/engRnDTeam: modify own + ops teams, but no eng password access"
+echo "- engManagers: read-only access to all"
+echo ""
 
+# Test 1: engmanager1 should be able to read all entries
+echo "Test 1: engmanager1 reading all entries (should work)"
+ldapsearch -x -D "uid=engmanager1,ou=People,dc=identity,dc=awcator,dc=com" -w manager123 -b "ou=People,dc=identity,dc=awcator,dc=com" "(objectClass=*)" dn
+echo ""
+
+# Test 2: engtest1 should be able to read ops users
+echo "Test 2: engtest1 reading ops users (should work)"
+ldapsearch -x -D "uid=engtest1,ou=People,dc=identity,dc=awcator,dc=com" -w test123 -b "ou=People,dc=identity,dc=awcator,dc=com" "(|(uid=opsuser)(uid=engops1))" dn
+echo ""
+
+# Test 3: engtest1 should NOT be able to read other eng users' passwords
+echo "Test 3: engtest1 trying to read engrnd1's password (should fail)"
+ldapsearch -x -D "uid=engtest1,ou=People,dc=identity,dc=awcator,dc=com" -w test123 -b "ou=People,dc=identity,dc=awcator,dc=com" "(uid=engrnd1)" userPassword
+echo ""
+
+# Test 4: engtest1 should be able to modify ops user password
+echo "Test 4: engtest1 modifying opsuser password (should work)"
+cat > /tmp/modify_ops_password.ldif << EOF
+dn: uid=opsuser,ou=People,dc=identity,dc=awcator,dc=com
+changetype: modify
+replace: userPassword
+userPassword: newops123
+EOF
+ldapmodify -x -D "uid=engtest1,ou=People,dc=identity,dc=awcator,dc=com" -w test123 -f /tmp/modify_ops_password.ldif
+echo ""
+
+# Test 5: engtest1 should NOT be able to modify other eng user password
+echo "Test 5: engtest1 trying to modify engrnd1 password (should fail)"
+cat > /tmp/modify_eng_password.ldif << EOF
+dn: uid=engrnd1,ou=People,dc=identity,dc=awcator,dc=com
+changetype: modify
+replace: userPassword
+userPassword: newrnd123
+EOF
+ldapmodify -x -D "uid=engtest1,ou=People,dc=identity,dc=awcator,dc=com" -w test123 -f /tmp/modify_eng_password.ldif
+echo ""
+
+# Test 6: opsuser should only be able to read own data
+echo "Test 6: opsuser trying to read other users (should fail)"
+ldapsearch -x -D "uid=opsuser,ou=People,dc=identity,dc=awcator,dc=com" -w ops123 -b "ou=People,dc=identity,dc=awcator,dc=com" "(uid=engtest1)" dn
+echo ""
+
+# Test 7: engmanager1 should be able to read passwords but not modify
+echo "Test 7: engmanager1 reading passwords (should work)"
+ldapsearch -x -D "uid=engmanager1,ou=People,dc=identity,dc=awcator,dc=com" -w manager123 -b "ou=People,dc=identity,dc=awcator,dc=com" "(uid=opsuser)" userPassword
+echo ""
+
+echo "Test 8: engmanager1 trying to modify password (should fail)"
+cat > /tmp/manager_modify_password.ldif << EOF
+dn: uid=opsuser,ou=People,dc=identity,dc=awcator,dc=com
+changetype: modify
+replace: userPassword
+userPassword: managerchange123
+EOF
+ldapmodify -x -D "uid=engmanager1,ou=People,dc=identity,dc=awcator,dc=com" -w manager123 -f /tmp/manager_modify_password.ldif
+echo ""
+
+echo "=== Test Complete ==="
 ```
