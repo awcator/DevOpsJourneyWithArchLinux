@@ -169,5 +169,81 @@ modify some data and view the file here. overlay demonstrated.
 
 # OLC: Online configuration 
 ```
+include         /etc/openldap/schema/core.schema
+pidfile         /run/openldap/slapd.pid
+argsfile        /run/openldap/slapd.args
+modulepath      /usr/lib/openldap
+moduleload      back_mdb.la
+moduleload	auditlog
+
+database config
+rootdn		"cn=awcator-config,cn=config"
+rootpw		secret
+
+database        mdb
+maxsize         1073741824
+
+suffix          "dc=awcator,dc=com"
+rootdn          "cn=awcator-root,dc=awcator,dc=com"
+rootpw          secret
+directory       /var/lib/openldap/openldap-data
+index   objectClass     eq
+database monitor
+```
+test
+```
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b cn=config objectclass='*' -H ldap://localhost:389
+```
+add logs support to test
+```
+sudo mkdir -p /var/ldaplogs
+sudo chown ldap:ldap /var/ldaplogs
+```
+add new databse for logs
+```
+dn: olcDatabase={3}mdb,cn=config
+changetype: add
+objectclass: olcDatabaseConfig
+objectclass: olcMdbConfig
+olcDatabase: {3}mdb
+olcSuffix: cn=log
+olcDbDirectory: /var/ldaplogs
+
+```
+add and search
+```
+ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  a.ldif
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b cn=config objectclass='*' -H ldap://localhost:389
+```
+setup logs for mdb main database
+```
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: accesslog
+
+
+
+dn: olcOverlay=accesslog,olcDatabase={1}mdb,cn=config
+changetype: add
+objectClass: olcOverlayConfig
+objectClass: olcAccessLogConfig
+olcOverlay: accesslog
+olcAccessLogDB: cn=log
+olcAccessLogOps: all
+```
+
+```
+ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  a.ldif
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b cn=log objectclass='*' -H ldap://localhost:389
+ldapsearch -D "cn=awcator-root,dc=awcator,dc=com" -w secret -b dc=awcator,dc=com objectclass='*' -H ldap://localhost:389
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b cn=log objectclass='*' -H ldap://localhost:389
+```
+permanent
+```
+sudo mkdir /etc/openldap/slapd.d
+sudo slaptest -f slapd.conf  -F sl
+sudo chown ldap:ldap -R slapd.d/
+
 
 ```
