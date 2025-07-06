@@ -375,7 +375,10 @@ objectclass ( 2.16.840.1.113730.3.2.130
 
 
 /etc/openldap/slapd.conf
-include         /etc/openldap/schema/core.schema
+include /etc/openldap/schema/core.schema
+include /etc/openldap/schema/cosine.schema
+include /etc/openldap/schema/inetorgperson.schema
+include /etc/openldap/schema/nis.schema
 include         /etc/openldap/schema/inetuser.schema
 pidfile         /run/openldap/slapd.pid
 argsfile        /run/openldap/slapd.args
@@ -442,32 +445,62 @@ ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass
 
 postinit.ldif
 dn: cn=opsTeam,ou=Group,dc=identity,dc=awcator,dc=com
+changetype: add
 objectClass: top
 objectClass: posixGroup
+cn: opsTeam
 gidNumber: 1005
-memberUid: cn=empty-membership-placeholder
+memberUid: placeholder
 
 dn: cn=engOpsTeam,ou=Group,dc=identity,dc=awcator,dc=com
+changetype: add
 objectClass: top
 objectClass: posixGroup
+cn: engOpsTeam
 gidNumber: 1001
-memberUid: cn=empty-membership-placeholder
+memberUid: placeholder
 
 dn: cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com
+changetype: add
 objectClass: top
 objectClass: posixGroup
+cn: engTestTeam
 gidNumber: 1002
-memberUid: cn=empty-membership-placeholder
+memberUid: placeholder
 
 dn: cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com
+changetype: add
 objectClass: top
 objectClass: posixGroup
+cn: engRnDTeam
 gidNumber: 1003
-memberUid: cn=empty-membership-placeholder
+memberUid: placeholder
 
 dn: cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com
+changetype: add
 objectClass: top
 objectClass: posixGroup
+cn: engManagers
 gidNumber: 1004
-memberUid: cn=empty-membership-placeholder
+memberUid: placeholder
+
+ldapmodify -D "cn=awcator-root,dc=identity,dc=awcator,dc=com" -w secret -H ldap://localhost:389 -f /tmp/post.ldif
+
+#user1.ldif
+dn: uid=devuser,ou=People,dc=identity,dc=awcator,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: inetUser
+objectClass: top
+cn: Dev User
+sn: User
+uid: devuser
+uidNumber: 2001
+gidNumber: 1005
+homeDirectory: /home/devuser
+loginShell: /bin/bash
+inetUserStatus: Active
+userPassword: test
+
+ldapadd -x -D "cn=awcator-root,dc=identity,dc=awcator,dc=com" -w secret -H ldap://localhost:389 -f /tmp/1.ldif
 ```
