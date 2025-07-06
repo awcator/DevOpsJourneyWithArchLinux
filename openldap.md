@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/48c02f28-f9b9-444e-9e89-0959caafcc9d)![image](https://github.com/user-attachments/assets/097b35dd-9031-477c-af4b-5118217edc60)# Basics
+# basics
 pacman -S openldap
 /etc/openldap/slapd.conf
 ```
