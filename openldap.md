@@ -533,4 +533,79 @@ olcAccess: {1}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com"
   by * none
 
 ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  /tmp/access.ldif
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 -b "olcDatabase={1}mdb,cn=config"
+
+
+dn: uid=opsuser,ou=People,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: opsuser
+sn: Ops
+cn: opsuser
+uidNumber: 2001
+gidNumber: 1005
+homeDirectory: /home/opsuser
+loginShell: /bin/bash
+userPassword: ops123
+
+dn: uid=engtest1,ou=People,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: engtest1
+sn: Test
+cn: engtest1
+uidNumber: 2002
+gidNumber: 1002
+homeDirectory: /home/engtest1
+loginShell: /bin/bash
+userPassword: test123
+
+dn: uid=engrnd1,ou=People,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: engrnd1
+sn: RnD
+cn: engrnd1
+uidNumber: 2003
+gidNumber: 1003
+homeDirectory: /home/engrnd1
+loginShell: /bin/bash
+userPassword: rnd123
+
+dn: uid=engmanager1,ou=People,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: engmanager1
+sn: Manager
+cn: engmanager1
+uidNumber: 2004
+gidNumber: 1004
+homeDirectory: /home/engmanager1
+loginShell: /bin/bash
+userPassword: manager123
+
+dn: uid=engops1,ou=People,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: engops1
+sn: Ops
+cn: engops1
+uidNumber: 2005
+gidNumber: 1001
+homeDirectory: /home/engops1
+loginShell: /bin/bash
+userPassword: engops123
+
+ldapadd -x \
+  -D "cn=awcator-root,dc=identity,dc=awcator,dc=com" \
+  -w secret \
+  -H ldap://localhost:389 \
+  -f /tmp/test-users.ldif
+
+
 ```
