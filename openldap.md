@@ -245,8 +245,8 @@ upon restarting server u will loose all configs so make permant
 # permanent method
 ```
 sudo mkdir /etc/openldap/slapd.d
-sudo slaptest -f slapd.conf  -F slapd.d/
 sudo chown ldap:ldap -R slapd.d/
+sudo slaptest -f slapd.conf  -F slapd.d/
 
 #run
 sudo /usr/lib/slapd  -u ldap -g ldap -h "ldap:/// ldapi:///" -d -1 -F /etc/openldap/slapd.d/
@@ -340,4 +340,134 @@ ldapadd -D "cn=awcator-config,cn=config" -w secret  -f mygenerated.ldif
 #verify if added
 ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 dn
 
+```
+
+
+# Prod like setup
+```
+sudo \rm -vrf /var/lib/openldap/openldap-data /etc/openldap/slapd.d
+
+/etc/openldap/schema/inetuser.schema:
+#
+# inetuser.schema – Custom schema for inetUser
+#
+
+attributetype ( 2.16.840.1.113730.3.1.692
+  NAME 'inetUserStatus'
+  DESC '"active", "inactive", or "deleted" status of a user'
+  EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  SINGLE-VALUE )
+
+attributetype ( 2.16.840.1.113730.3.1.693
+  NAME 'inetUserHttpURL'
+  DESC 'A user Web addresses'
+  EQUALITY caseIgnoreIA5Match
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+
+objectclass ( 2.16.840.1.113730.3.2.130
+  NAME 'inetUser'
+  DESC 'Auxiliary class for delivery of subscriber services'
+  SUP top
+  AUXILIARY
+  MAY ( uid $ inetUserStatus $ inetUserHttpURL $ userPassword ) )
+
+
+
+/etc/openldap/slapd.conf
+include         /etc/openldap/schema/core.schema
+include         /etc/openldap/schema/inetuser.schema
+pidfile         /run/openldap/slapd.pid
+argsfile        /run/openldap/slapd.args
+modulepath      /usr/lib/openldap
+moduleload      back_mdb.la
+moduleload	     auditlog
+moduleload      accesslog
+moduleload      ppolicy
+
+database config
+rootdn		"cn=awcator-config,cn=config"
+rootpw		secret
+
+database        mdb
+maxsize         1073741824
+suffix          "dc=identity,dc=awcator,dc=com"
+rootdn          "cn=awcator-root,dc=identity,dc=awcator,dc=com"
+rootpw          secret
+directory       /var/lib/openldap/openldap-data
+index   objectClass     eq
+database monitor
+
+
+init.ldif:
+dn: dc=identity,dc=awcator,dc=com
+objectclass: dcObject
+objectclass: organization
+o: Awcator Identity
+dc: identity
+
+dn: ou=People,dc=identity,dc=awcator,dc=com
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Group,dc=identity,dc=awcator,dc=com
+objectClass: organizationalUnit
+ou: Group
+
+dn: ou=Policies,dc=identity,dc=awcator,dc=com
+objectClass: organizationalUnit
+ou: Policies
+description: Directory policies.
+
+dn: cn=default,ou=Policies,dc=identity,dc=awcator,dc=com
+cn: default
+description: Default password policy.
+objectclass: device
+objectclass: pwdPolicy
+pwdAttribute: userPassword
+pwdInHistory: 2
+
+
+sudo mkdir -p /var/lib/openldap/openldap-data
+sudo chown ldap:ldap /var/lib/openldap/openldap-data
+sudo mkdir /etc/openldap/slapd.d
+sudo chown ldap:ldap -R slapd.d/
+
+sudo slapadd -f /etc/openldap/slapd.conf -l /tmp/init.ldif
+sudo slaptest -f slapd.conf  -F slapd.d/
+sudo chown ldap:ldap -R /var/lib/openldap/openldap-data
+sudo chown ldap:ldap -R slapd.d/
+sudo /usr/lib/slapd -u ldap -g ldap -h "ldap:/// ldapi:///" -d 1
+ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 dn
+
+postinit.ldif
+dn: cn=opsTeam,ou=Group,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: posixGroup
+gidNumber: 1005
+memberUid: cn=empty-membership-placeholder
+
+dn: cn=engOpsTeam,ou=Group,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: posixGroup
+gidNumber: 1001
+memberUid: cn=empty-membership-placeholder
+
+dn: cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: posixGroup
+gidNumber: 1002
+memberUid: cn=empty-membership-placeholder
+
+dn: cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: posixGroup
+gidNumber: 1003
+memberUid: cn=empty-membership-placeholder
+
+dn: cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com
+objectClass: top
+objectClass: posixGroup
+gidNumber: 1004
+memberUid: cn=empty-membership-placeholder
 ```
