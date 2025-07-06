@@ -525,17 +525,9 @@ olcAccess: {0}to attrs=userPassword
   by self write
   by anonymous auth
   by * none
-
-olcAccess: {1}to dn.regex="uid=([^,]+),ou=People,dc=identity,dc=awcator,dc=com"
-  by set.exact="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid" read
-  by dn.exact="uid=\1,ou=People,dc=identity,dc=awcator,dc=com" write
-  by * none
-
-olcAccess: {2}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com"
+olcAccess: {1}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com"
   by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
   by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
-  by set="[cn=opsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
-  by set="[cn=engOpsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
   by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
   by self read
   by * none
