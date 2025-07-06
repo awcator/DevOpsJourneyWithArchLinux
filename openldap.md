@@ -503,4 +503,42 @@ inetUserStatus: Active
 userPassword: test
 
 ldapadd -x -D "cn=awcator-root,dc=identity,dc=awcator,dc=com" -w secret -H ldap://localhost:389 -f /tmp/1.ldif
+ldapsearch -D "uid=devuser,ou=People,dc=identity,dc=awcator,dc=com" -w test -b dc=identity,dc=awcator,dc=com objectclass='*' -H ldap://localhost:389-
+
+
+#access.ldif
+| Group         | Can Read           | Can Modify                | Notes                                                      |
+| ------------- | ------------------ | ------------------------- | ---------------------------------------------------------- |
+| `opsTeam`     | ✅ own data only    | ❌                         | Read-only to own attributes                                |
+| `engOpsTeam`  | ✅ own data only    | ❌                         | Same as above                                              |
+| `engTestTeam` | ✅ own + ops/engOps | ✅ modify own + ops/engOps | Cannot modify other eng users; cannot read their passwords |
+| `engRnDTeam`  | ✅ own + ops/engOps | ✅ modify own + ops/engOps | Same as `engTestTeam`                                      |
+| `engManagers` | ✅ all entries      | ❌                         | Full visibility (read-only), including passwords           |
+
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to attrs=userPassword
+  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
+  by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
+  by self write
+  by anonymous auth
+  by * none
+
+olcAccess: {1}to dn.regex="uid=([^,]+),ou=People,dc=identity,dc=awcator,dc=com"
+  by set.exact="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid" read
+  by dn.exact="uid=\1,ou=People,dc=identity,dc=awcator,dc=com" write
+  by * none
+
+olcAccess: {2}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com"
+  by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
+  by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
+  by set="[cn=opsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by set="[cn=engOpsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by self read
+  by * none
+
+ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  /tmp/access.ldif
 ```
