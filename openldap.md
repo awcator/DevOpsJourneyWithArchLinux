@@ -239,11 +239,14 @@ ldapsearch -D "cn=awcator-config,cn=config" -w secret -b cn=log objectclass='*' 
 ldapsearch -D "cn=awcator-root,dc=awcator,dc=com" -w secret -b dc=awcator,dc=com objectclass='*' -H ldap://localhost:389
 ldapsearch -D "cn=awcator-config,cn=config" -w secret -b cn=log objectclass='*' -H ldap://localhost:389
 ```
-permanent
+upon restarting server u will loose all configs so make permant
+# permanent method
 ```
 sudo mkdir /etc/openldap/slapd.d
-sudo slaptest -f slapd.conf  -F sl
+sudo slaptest -f slapd.conf  -F slapd.d/
 sudo chown ldap:ldap -R slapd.d/
 
-
+#run
+sudo /usr/lib/slapd  -u ldap -g ldap -h "ldap:/// ldapi:///" -d -1 -F /etc/openldap/slapd.d/
+#then rerun above commands to setup logs and overlay
 ```
