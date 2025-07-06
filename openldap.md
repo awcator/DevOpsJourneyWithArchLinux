@@ -518,19 +518,41 @@ ldapsearch -D "uid=devuser,ou=People,dc=identity,dc=awcator,dc=com" -w test -b d
 dn: olcDatabase={1}mdb,cn=config
 changetype: modify
 replace: olcAccess
-olcAccess: {0}to attrs=userPassword
+olcAccess: {0}to attrs=userPassword filter="(|(gidNumber=1005)(gidNumber=1001))"
   by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
   by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
   by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
   by self write
   by anonymous auth
   by * none
-olcAccess: {1}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com"
+olcAccess: {1}to attrs=userPassword filter="(|(gidNumber=1002)(gidNumber=1003)(gidNumber=1004))"
+  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by self write
+  by anonymous auth
+  by * none
+olcAccess: {2}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(|(gidNumber=1005)(gidNumber=1001))"
+  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
   by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
   by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
+  by set="[cn=opsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by set="[cn=engOpsTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by * none
+olcAccess: {3}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(gidNumber=1002)"
+  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by set="[cn=engTestTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
+  by * none
+olcAccess: {4}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(gidNumber=1003)"
+  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by set="[cn=engRnDTeam,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" write
+  by * none
+olcAccess: {5}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com" filter="(gidNumber=1004)"
+  by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
+  by * none
+olcAccess: {6}to dn.subtree="ou=People,dc=identity,dc=awcator,dc=com"
   by set="[cn=engManagers,ou=Group,dc=identity,dc=awcator,dc=com]/memberUid & user/uid" read
   by self read
   by * none
+
 
 ldapmodify -D "cn=awcator-config,cn=config" -w secret -f  /tmp/access.ldif
 ldapsearch -D "cn=awcator-config,cn=config" -w secret -b "cn=config" objectclass='*' -H ldap://localhost:389 -b "olcDatabase={1}mdb,cn=config"
