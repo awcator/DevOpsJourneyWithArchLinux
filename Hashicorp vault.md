@@ -354,14 +354,14 @@ openssl x509 -text -in intermediate-ca/certs/intermediateCa.crt -noout
 ```
 #### Server Certificate generation
 ```
-export DOMAIN_NAME=awcator.com
+export COMMON_NAME=awcator.com
 openssl req -key server/server.key -new  -sha256 -out server/my_Server.csr
 -# give commonName as ur domain name, here used: accd.google.com
 openssl ca -config ~/awcatorPKI/intermediate-ca/config -extensions server_cert -days 365 -notext -in server/my_Server.csr -out server/server.crt
 # updates index, seraial, serai.old, newcerts
-cat server/server.crt  intermediate-ca/certs/intermediateCa.crt > server/chain_server.crt
+cat server/server.key server/server.crt  intermediate-ca/certs/intermediateCa.crt > server/chain_server.crt
 # for chain
-cat server/server.crt  intermediate-ca/certs/intermediateCa.crt  ca/certs/ca.crt> server/full_chain_server.crt
+cat  server/server.key  server/server.crt  intermediate-ca/certs/intermediateCa.crt  ca/certs/ca.crt> server/full_chain_server.crt
 # --------------------- custom singing using burp CA, incase you want to put this infront of haproxy
 # openssl genrsa  -out server.key 2048
 # openssl req -key server.key -new  -sha256 -out my_Server.csr
