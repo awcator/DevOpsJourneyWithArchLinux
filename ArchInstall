@@ -351,4 +351,4 @@ sudo nvidia-xconfig
 nvidia-smi
 
 #addons
-pacman -S steam volumeicon parcellite dunst blueman-applet lib32-nvidia-utils lib32-vulkan-intel vulkan-mesa-layers network-manager-applet
+pacman -S steam volumeicon parcellite dunst blueman-applet lib32-nvidia-utils lib32-vulkan-intel vulkan-mesa-layers network-manager-applet scrot imagemagick
