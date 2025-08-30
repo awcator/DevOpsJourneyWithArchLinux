@@ -21,7 +21,7 @@ alias mirftu='sudo pacman-mirrors --fasttrack 10 && sudo pacman -Syyu'
 pacman-key --init
 pacman-key --populate archlinux
 pacman -Syyu base base-devel bluez-tools python-pybluez bluez-hid2hci bluez-deprecated-tools vlc-plugin-gstreamer vlc-plugin-ffmpeg git vim wget reflector bash xorg linux-headers git dns-utils bind net-tools netcat nmap extra/breeze-icons extra/bluez-tools extra/python-pybluez extra/bluez-hid2hci extra/bluez-deprecated-tools
-pacman -S cargo neovim kubectl tmux kubectx aws-cli maven pkgfile xorg-xauth  bind nmap pkgfile  openssl dos2unix tmux bash-completion bind lxd docker net-tools xclip yq jq code thunar gedit vlc gvfs thunar-volman pinta cherrytree ffmpegthumbnailer tumbler
+pacman -S cargo neovim kubectl tmux kubectx aws-cli maven pkgfile xorg-xauth  bind nmap pkgfile  openssl dos2unix tmux bash-completion bind lxd docker net-tools xclip yq jq code thunar gedit vlc gvfs thunar-volman pinta cherrytree ffmpegthumbnailer tumbler thunar-archive-plugin poppler-glib  file-roller
 
 
 useradd -m -G wheel -s /bin/bash -d /home/awcator awcator
@@ -47,7 +47,7 @@ systemctl --user enable --now pipewire.socket
 systemctl --user enable --now pipewire-pulse.socket
 systemctl --user enable --now wireplumber.service
 
-yay -S aur/i3-battery-popup-git aur/intellij-idea-ultimate-edition megasync-bin teams-for-linux-bin keybase-bin keybase-gui keybase-bash-completion-git brave-bin pacdep
+yay -S aur/i3-battery-popup-git megasync-bin teams-for-linux-bin brave-bin pacdep
 
 #polkit rules
 cat /etc/polkit-1/rules.d/enableMounts.rules
@@ -297,7 +297,7 @@ LOG_FILE="/home/awcator/Documents/log/clamav/virus_alert.log"
 echo "$TIMESTAMP - Virus detected: $VIRUSNAME in file $FILENAME" >> "$LOG_FILE"
 
 #GTK theme
-pacman -S gtk-engine-murrine gtk-engines
+pacman -S gtk-engine-murrine gtk-engines lxappearance
 git clone https://github.com/vinceliuice/Vimix-gtk-themes
 ./install.sh -t all -s all
 lxappearance
