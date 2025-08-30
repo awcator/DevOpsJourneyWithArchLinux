@@ -349,3 +349,6 @@ ip netns del name
 sudo pacman -S nvidia nvidia-utils nvidia-settings nvidia-container-toolkit
 sudo nvidia-xconfig
 nvidia-smi
+
+#addons
+pacman -S steam nm-applet volumeicon parcellite dunst blueman-applet lib32-nvidia-utils lib32-vulkan-intel vulkan-mesa-layers
