@@ -47,7 +47,7 @@ systemctl --user enable --now pipewire.socket
 systemctl --user enable --now pipewire-pulse.socket
 systemctl --user enable --now wireplumber.service
 
-yay -S aur/i3-battery-popup-git megasync-bin teams-for-linux-bin brave-bin pacdep
+yay -S aur/i3-battery-popup-git megasync-bin teams-for-linux-bin brave-bin pacdep jetbrains-toolbox
 
 #polkit rules
 cat /etc/polkit-1/rules.d/enableMounts.rules
@@ -297,7 +297,7 @@ LOG_FILE="/home/awcator/Documents/log/clamav/virus_alert.log"
 echo "$TIMESTAMP - Virus detected: $VIRUSNAME in file $FILENAME" >> "$LOG_FILE"
 
 #GTK theme
-pacman -S gtk-engine-murrine gtk-engines lxappearance
+pacman -S gtk-engine-murrine gtk-engines lxappearance breeze-icons
 git clone https://github.com/vinceliuice/Vimix-gtk-themes
 ./install.sh -t all -s all
 lxappearance
@@ -351,4 +351,4 @@ sudo nvidia-xconfig
 nvidia-smi
 
 #addons
-pacman -S steam nm-applet volumeicon parcellite dunst blueman-applet lib32-nvidia-utils lib32-vulkan-intel vulkan-mesa-layers
+pacman -S steam volumeicon parcellite dunst blueman-applet lib32-nvidia-utils lib32-vulkan-intel vulkan-mesa-layers network-manager-applet
