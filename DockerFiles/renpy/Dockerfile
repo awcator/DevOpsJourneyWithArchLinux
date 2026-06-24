@@ -1,7 +1,7 @@
 FROM archlinux:latest
 RUN pacman -Sy base reflector sudo --noconfirm
-RUN reflector --country "India" --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-RUN  pacman -Sy debugedit  base-devel fakeroot python3 git libglvnd firefox tk vulkan-driver libva-mesa-driver mesa-vdpau jack2-dbus freeglut webp-pixbuf-loader intel-media-driver libva-intel-driver libva-mesa-driver xdg-utils  alsa-plugins pulseaudio-alsa nvidia  pulseaudio pipewire pipewire-audio pipewire-jack-client pipewire-v4l2 pipewire-alsa mesa xorg-server xorg-xinit --noconfirm
+#RUN reflector --country "India" --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+RUN  pacman -Sy debugedit  base-devel fakeroot python3 git libglvnd firefox tk vulkan-driver libva-mesa-driver  jack2-dbus freeglut webp-pixbuf-loader intel-media-driver libva-intel-driver libva-mesa-driver xdg-utils  alsa-plugins pulseaudio-alsa nvidia-open  pulseaudio pipewire pipewire-audio pipewire-jack-client pipewire-v4l2 pipewire-alsa mesa xorg-server xorg-xinit --noconfirm
 # makepkg user and workdir
 ARG user=makepkg
 RUN useradd --system --create-home $user \

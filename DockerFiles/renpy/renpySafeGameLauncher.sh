@@ -18,7 +18,7 @@ docker run --device /dev/dri/ -it   \
 	--net=none \
 	--cap-drop=ALL \
 	-e __VK_LAYER_NV_optimus=NVIDIA_only \
-	--runtime=nvidia --gpus all \
+	--runtime=nvidia \
 	-e  DISPLAY=$DISPLAY  -v `pwd`:"/game/":rw  -w /game awcator/renpygamelauncher:1.0 bash -c "pulseaudio -D;$1"
 #SDL_AUDIODRIVER
 #PULSE_SERVER=unix:/run/user/0/pulse/native
