@@ -2,6 +2,20 @@ FROM archlinux:latest
 RUN pacman -Sy base reflector sudo --noconfirm
 #RUN reflector --country "India" --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 RUN  pacman -Sy debugedit  base-devel fakeroot python3 git libglvnd firefox tk vulkan-driver libva-mesa-driver  jack2-dbus freeglut webp-pixbuf-loader intel-media-driver libva-intel-driver libva-mesa-driver xdg-utils  alsa-plugins pulseaudio-alsa nvidia-open  pulseaudio pipewire pipewire-audio pipewire-jack-client pipewire-v4l2 pipewire-alsa mesa xorg-server xorg-xinit --noconfirm
+# --- Kirikiri (krkr) / .xp3 Japanese visual novel support ---
+# The base archlinux image strips locale source files via pacman NoExtract rules
+# (usr/share/i18n/* etc.), so ja_JP can't be generated. Remove those rules,
+# reinstall glibc to restore the locale sources, then add Wine + JP fonts and
+# generate ja_JP.UTF-8.
+RUN sed -i '/NoExtract.*locale/d; /NoExtract.*i18n/d' /etc/pacman.conf \
+    && pacman -Sy --noconfirm glibc wine otf-ipafont noto-fonts-cjk \
+    && sed -i 's/^#ja_JP.UTF-8/ja_JP.UTF-8/' /etc/locale.gen \
+    && locale-gen \
+    && rm -rf /var/cache/pacman/pkg/*
+
+ENV LANG=ja_JP.UTF-8 \
+    LC_ALL=ja_JP.UTF-8
+
 # makepkg user and workdir
 ARG user=makepkg
 RUN useradd --system --create-home $user \
