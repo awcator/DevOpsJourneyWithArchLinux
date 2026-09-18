@@ -1,4 +1,13 @@
-# basics
+# OpenLDAP + Keycloak + Samba Identity Stack
+
+> **Full automated setup:** `sudo bash identity-stack.sh`
+> Wipes all old data and rebuilds OpenLDAP + Keycloak + Samba + NSS/PAM from scratch with tests after every step.
+> Org hierarchy: department → HOD/manager/end-user with 4 operational levels (lvl1=call-center → lvl4=engineering).
+> Higher levels manage lower; HODs/managers read their department.
+
+---
+
+# basics (legacy notes below)
 pacman -S openldap
 /etc/openldap/slapd.conf
 ```
