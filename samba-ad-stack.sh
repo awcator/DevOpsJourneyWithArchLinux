@@ -397,6 +397,21 @@ SQLPY
 
 # 9.3: Create SQL Service Script
 cat > /srv/samba/shared/Create-SqlService.ps1 <<'CREATESVC'
+# Enable TCP/IP in SQL Server Express and Restart the SQL Service
+Write-Output "Enabling TCP/IP for SQL Server Express to allow network/remote connections..."
+$sqlProviderPath = "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp"
+if (Test-Path $sqlProviderPath) {
+    Set-ItemProperty -Path $sqlProviderPath -Name "Enabled" -Value 1
+    $sqlIpAllPath = "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQLServer\SuperSocketNetLib\Tcp\IPAll"
+    if (Test-Path $sqlIpAllPath) {
+        Set-ItemProperty -Path $sqlIpAllPath -Name "TcpPort" -Value "1433"
+        Set-ItemProperty -Path $sqlIpAllPath -Name "TcpDynamicPorts" -Value ""
+    }
+    Write-Output "Restarting SQL Server Service..."
+    Restart-Service -Name "MSSQL`$SQLEXPRESS" -Force
+} else {
+    Write-Output "WARNING: Could not find SQL Registry path to enable TCP/IP. Skipping..."
+}
 # 1. Download NSSM
 $nssmZip = "C:\Users\Public\nssm.zip"
 $nssmExtracted = "C:\Users\Public\nssm"
