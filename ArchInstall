@@ -353,3 +353,38 @@ nvidia-smi
 #addons
 pacman -S steam volumeicon parcellite dunst blueman-applet lib32-nvidia-utils lib32-vulkan-intel vulkan-mesa-layers network-manager-applet scrot imagemagick
 xdg-mime default Thunar.desktop inode/directory
+
+
+#root account lockdown
+# Arch default: root has NO password, access is via sudo only.
+# If root ever gets a password set (e.g. by a stray `passwd` run as root),
+# lock it again so password login to root is impossible.
+sudo passwd -l root
+passwd -S root          # expect: root L <date>   (L = locked, P = has password)
+
+# Verify who actually changed a password and when (reads /etc/shadow field 3):
+sudo chage -l root
+sudo chage -l $USER
+# Gotcha: running `passwd` while already root changes ROOT's password, not yours.
+# Always check `chage -l <user>` afterwards to confirm the right account moved.
+
+# Locking root does NOT break sudo:
+sudo -i                 # works - sudo elevates first, root's hash never checked
+sudo su                 # works ONLY if pam_rootok is FIRST in /etc/pam.d/su
+su -                    # blocked - this one does check root's hash
+
+# IMPORTANT /etc/pam.d/su ordering:
+# pam_rootok.so MUST be the first auth line. If fingerprint/keyring lines
+# (pam_unix / pam_fprintd) are inserted above it, PAM evaluates them first and
+# `sudo su` will prompt for ROOT's password - which fails when root is locked.
+# Stock Arch order:
+#   auth  sufficient  pam_rootok.so
+#   auth  required    pam_unix.so
+# Compare against the packaged original:
+#   bsdtar -xOf /var/cache/pacman/pkg/util-linux-*.pkg.tar.zst etc/pam.d/su | diff - /etc/pam.d/su
+
+# Also avoid `nullok` on pam_unix (permits empty passwords) and keep
+# pam_faillock in system-auth for brute-force protection.
+# Check lockout state / reset counter:
+faillock --user $USER
+faillock --user $USER --reset
